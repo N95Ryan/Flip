@@ -81,3 +81,18 @@ func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 	}
 	return &u, nil
 }
+
+// GetSubscriptionStatus returns the subscription_status for the given user ID.
+func (r *UserRepository) GetSubscriptionStatus(userID string) (string, error) {
+	const q = `SELECT subscription_status FROM users WHERE id = $1`
+
+	var status string
+	err := r.db.QueryRow(q, userID).Scan(&status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
