@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
 	"github.com/N95Ryan/flip-back/data"
@@ -27,11 +29,18 @@ func main() {
 	h := handler.NewTechniqueHandler(svc)
 
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Content-Type", "Authorization"},
+	}))
+
 	r.Get("/techniques", h.ListTechniques)
 	r.Get("/techniques/{id}", h.GetTechnique)
 
 	log.Printf("Server running on port %s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
+	if err := http.ListenAndServe("0.0.0.0:"+port, r); err != nil {
 		log.Fatal(err)
 	}
 }
