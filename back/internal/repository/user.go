@@ -96,3 +96,29 @@ func (r *UserRepository) GetSubscriptionStatus(userID string) (string, error) {
 	}
 	return status, nil
 }
+
+// GetStripeCustomerID returns the stripe_customer_id for the given user ID.
+func (r *UserRepository) GetStripeCustomerID(userID string) (string, error) {
+	const q = `SELECT stripe_customer_id FROM users WHERE id = $1`
+
+	var stripeID sql.NullString
+	err := r.db.QueryRow(q, userID).Scan(&stripeID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if stripeID.Valid {
+		return stripeID.String, nil
+	}
+	return "", nil
+}
+
+// UpdateSubscriptionByCustomerID sets subscription_status for the user with the given Stripe customer ID.
+func (r *UserRepository) UpdateSubscriptionByCustomerID(stripeCustomerID, status string) error {
+	const q = `UPDATE users SET subscription_status = $1 WHERE stripe_customer_id = $2`
+
+	_, err := r.db.Exec(q, status, stripeCustomerID)
+	return err
+}
