@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/N95Ryan/flip-back/internal/model"
@@ -21,11 +22,12 @@ var (
 type AuthService struct {
 	repo      *repository.UserRepository
 	jwtSecret []byte
+	stripeSvc *BillingService
 }
 
 // NewAuthService constructs an auth service.
-func NewAuthService(repo *repository.UserRepository, jwtSecret string) *AuthService {
-	return &AuthService{repo: repo, jwtSecret: []byte(jwtSecret)}
+func NewAuthService(repo *repository.UserRepository, jwtSecret string, stripeSvc *BillingService) *AuthService {
+	return &AuthService{repo: repo, jwtSecret: []byte(jwtSecret), stripeSvc: stripeSvc}
 }
 
 // Register creates a user and returns the user plus a JWT.
@@ -45,6 +47,15 @@ func (s *AuthService) Register(email, password string) (*model.User, string, err
 			return nil, "", ErrEmailExists
 		}
 		return nil, "", err
+	}
+
+	if s.stripeSvc != nil {
+		customerID, err := s.stripeSvc.CreateStripeCustomer(user.ID, user.Email)
+		if err != nil {
+			log.Printf("stripe customer creation failed: %v", err)
+		} else if err := s.repo.UpdateStripeCustomerID(user.ID, customerID); err == nil {
+			user.StripeCustomerID = customerID
+		}
 	}
 
 	token, err := s.generateToken(user.ID)
