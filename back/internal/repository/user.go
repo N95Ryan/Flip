@@ -115,6 +115,13 @@ func (r *UserRepository) GetStripeCustomerID(userID string) (string, error) {
 	return "", nil
 }
 
+// UpdateStripeCustomerID sets stripe_customer_id for the given user.
+func (r *UserRepository) UpdateStripeCustomerID(userID, stripeCustomerID string) error {
+	const q = `UPDATE users SET stripe_customer_id = $1 WHERE id = $2`
+	_, err := r.db.Exec(q, stripeCustomerID, userID)
+	return err
+}
+
 // UpdateSubscriptionByCustomerID sets subscription_status for the user with the given Stripe customer ID.
 func (r *UserRepository) UpdateSubscriptionByCustomerID(stripeCustomerID, status string) error {
 	const q = `UPDATE users SET subscription_status = $1 WHERE stripe_customer_id = $2`
