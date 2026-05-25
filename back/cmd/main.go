@@ -117,16 +117,15 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 
-	authSvc := service.NewAuthService(userRepo, jwtSecret)
+	billingSvc := service.NewBillingService(userRepo, stripePriceID, stripeWebhookSecret)
+	billingHandler := handler.NewBillingHandler(billingSvc, userRepo)
 
+	authSvc := service.NewAuthService(userRepo, jwtSecret, billingSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
 
 	journalRepo := repository.NewJournalRepository(db)
 	journalSvc := service.NewJournalService(journalRepo)
 	journalHandler := handler.NewJournalHandler(journalSvc)
-
-	billingSvc := service.NewBillingService(userRepo, stripePriceID, stripeWebhookSecret)
-	billingHandler := handler.NewBillingHandler(billingSvc, userRepo)
 
 	r := chi.NewRouter()
 

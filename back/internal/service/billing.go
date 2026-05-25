@@ -7,6 +7,7 @@ import (
 	"github.com/N95Ryan/flip-back/internal/repository"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/checkout/session"
+	"github.com/stripe/stripe-go/v82/customer"
 	"github.com/stripe/stripe-go/v82/webhook"
 )
 
@@ -26,14 +27,27 @@ func NewBillingService(userRepo *repository.UserRepository, priceID, webhookSecr
 	}
 }
 
+// CreateStripeCustomer creates a Stripe Customer for the given user.
+func (s *BillingService) CreateStripeCustomer(userID, email string) (string, error) {
+	params := &stripe.CustomerParams{
+		Email:    stripe.String(email),
+		Metadata: map[string]string{"user_id": userID},
+	}
+	c, err := customer.New(params)
+	if err != nil {
+		return "", fmt.Errorf("stripe create customer: %w", err)
+	}
+	return c.ID, nil
+}
+
 // CreateCheckoutSession creates a Stripe Checkout Session in subscription mode.
 func (s *BillingService) CreateCheckoutSession(userID, customerID, successURL, cancelURL string) (string, error) {
 	params := &stripe.CheckoutSessionParams{
-		Customer:           stripe.String(customerID),
-		ClientReferenceID:  stripe.String(userID),
-		Mode:               stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		SuccessURL: stripe.String(successURL),
-		CancelURL:  stripe.String(cancelURL),
+		Customer:          stripe.String(customerID),
+		ClientReferenceID: stripe.String(userID),
+		Mode:              stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		SuccessURL:        stripe.String(successURL),
+		CancelURL:         stripe.String(cancelURL),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				Price:    stripe.String(s.priceID),
@@ -51,7 +65,9 @@ func (s *BillingService) CreateCheckoutSession(userID, customerID, successURL, c
 
 // HandleWebhook verifies the Stripe signature and updates subscription status.
 func (s *BillingService) HandleWebhook(payload []byte, sigHeader string) error {
-	event, err := webhook.ConstructEvent(payload, sigHeader, s.webhookSecret)
+	event, err := webhook.ConstructEventWithOptions(payload, sigHeader, s.webhookSecret,
+		webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true},
+	)
 	if err != nil {
 		return fmt.Errorf("construct webhook event: %w", err)
 	}
