@@ -36,6 +36,8 @@ import (
 
 	"github.com/N95Ryan/flip-back/internal/service"
 
+	"github.com/stripe/stripe-go/v82"
+
 )
 
 
@@ -64,7 +66,18 @@ func main() {
 
 	}
 
+	stripeKey := os.Getenv("STRIPE_SECRET_KEY")
+	if stripeKey == "" {
+		log.Fatal("STRIPE_SECRET_KEY is required")
+	}
+	stripe.Key = stripeKey
 
+	stripePriceID := os.Getenv("STRIPE_PRICE_ID")
+	if stripePriceID == "" {
+		log.Fatal("STRIPE_PRICE_ID is required")
+	}
+
+	stripeWebhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 
 	dbURL := os.Getenv("DATABASE_URL")
 
@@ -112,6 +125,9 @@ func main() {
 	journalSvc := service.NewJournalService(journalRepo)
 	journalHandler := handler.NewJournalHandler(journalSvc)
 
+	billingSvc := service.NewBillingService(userRepo, stripePriceID, stripeWebhookSecret)
+	billingHandler := handler.NewBillingHandler(billingSvc, userRepo)
+
 	r := chi.NewRouter()
 
 	r.Use(chimiddleware.Logger)
@@ -139,6 +155,13 @@ func main() {
 	r.Get("/techniques/{id}", techniqueHandler.GetTechnique)
 
 
+
+	r.Group(func(r chi.Router) {
+		r.Use(authmiddleware.AuthMiddleware(jwtSecret))
+		r.Post("/billing/checkout", billingHandler.CreateCheckout)
+	})
+
+	r.Post("/billing/webhook", billingHandler.HandleWebhook)
 
 	r.Group(func(r chi.Router) {
 		r.Use(authmiddleware.AuthMiddleware(jwtSecret))
