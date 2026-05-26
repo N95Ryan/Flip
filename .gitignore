@@ -1,0 +1,39 @@
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- IDE / editors ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Go (back/) ---
+back/bin/
+back/dist/
+back/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+coverage.html
+vendor/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Misc ---
+*.tmp
+*.bak
