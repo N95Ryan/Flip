@@ -71,7 +71,7 @@ func (h *BillingHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	sigHeader := r.Header.Get("Stripe-Signature")
 
 	if err := h.billingSvc.HandleWebhook(payload, sigHeader); err != nil {
-		log.Printf("webhook error: %v", err) // ajoute cette ligne
+		log.Printf("webhook error: %v", err)
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}

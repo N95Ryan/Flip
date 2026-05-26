@@ -4,22 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/N95Ryan/flip-back/internal/repository"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/checkout/session"
 	"github.com/stripe/stripe-go/v82/customer"
 	"github.com/stripe/stripe-go/v82/webhook"
 )
 
+// UserRepository defines the user persistence operations required by BillingService.
+type UserRepository interface {
+	UpdateSubscriptionByCustomerID(customerID, status string) error
+	GetStripeCustomerID(userID string) (string, error)
+	UpdateStripeCustomerID(userID, stripeCustomerID string) error
+}
+
 // BillingService handles Stripe checkout and webhook processing.
 type BillingService struct {
-	userRepo      *repository.UserRepository
+	userRepo      UserRepository
 	priceID       string
 	webhookSecret string
 }
 
 // NewBillingService constructs a billing service.
-func NewBillingService(userRepo *repository.UserRepository, priceID, webhookSecret string) *BillingService {
+func NewBillingService(userRepo UserRepository, priceID, webhookSecret string) *BillingService {
 	return &BillingService{
 		userRepo:      userRepo,
 		priceID:       priceID,

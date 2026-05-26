@@ -18,15 +18,22 @@ var (
 	ErrEmailExists        = errors.New("email already registered")
 )
 
+// AuthUserRepository defines the user persistence operations required by AuthService.
+type AuthUserRepository interface {
+	CreateUser(email, hashedPassword string) (*model.User, error)
+	GetUserByEmail(email string) (*model.User, error)
+	UpdateStripeCustomerID(userID, stripeCustomerID string) error
+}
+
 // AuthService handles registration, login, and JWT issuance.
 type AuthService struct {
-	repo      *repository.UserRepository
+	repo      AuthUserRepository
 	jwtSecret []byte
 	stripeSvc *BillingService
 }
 
 // NewAuthService constructs an auth service.
-func NewAuthService(repo *repository.UserRepository, jwtSecret string, stripeSvc *BillingService) *AuthService {
+func NewAuthService(repo AuthUserRepository, jwtSecret string, stripeSvc *BillingService) *AuthService {
 	return &AuthService{repo: repo, jwtSecret: []byte(jwtSecret), stripeSvc: stripeSvc}
 }
 
