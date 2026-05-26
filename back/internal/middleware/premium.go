@@ -2,12 +2,15 @@ package middleware
 
 import (
 	"net/http"
-
-	"github.com/N95Ryan/flip-back/internal/repository"
 )
 
+// StatusChecker defines the subscription lookup required by PremiumMiddleware.
+type StatusChecker interface {
+	GetSubscriptionStatus(userID string) (string, error)
+}
+
 // PremiumMiddleware ensures the authenticated user has an active subscription.
-func PremiumMiddleware(userRepo *repository.UserRepository) func(http.Handler) http.Handler {
+func PremiumMiddleware(userRepo StatusChecker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userID, ok := UserIDFromContext(r.Context())
