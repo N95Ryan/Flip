@@ -34,8 +34,13 @@ Flip/
 | -------- | ------------------------------------ |
 | Mobile   | Expo, React Native, TypeScript       |
 | Backend  | Go, Chi                              |
+<<<<<<< Updated upstream
 | Auth     | Supabase Auth (JWT)                  |
 | Database | Supabase PostgreSQL                  |
+=======
+| Auth     | JWT (custom Go implementation)       |
+| Database | Neon PostgreSQL                      |
+>>>>>>> Stashed changes
 | Billing  | Stripe (subscriptions + webhooks)    |
 | Deploy   | Expo EAS (mobile) · Render (backend) |
 | Tests    | Go testing + testify                 |
@@ -48,6 +53,10 @@ Flip/
 
 - React Native + TypeScript
 - Expo + Expo Router v3
+<<<<<<< Updated upstream
+=======
+- Zustand (auth state)
+>>>>>>> Stashed changes
 - StyleSheet (no NativeWind)
 
 **Backend**
@@ -120,6 +129,7 @@ POST   /journal                 # [auth + premium]
 PUT    /journal/:id             # [auth + premium]
 DELETE /journal/:id             # [auth + premium]
 ```
+<<<<<<< Updated upstream
 
 ### Techniques API
 
@@ -131,6 +141,8 @@ DELETE /journal/:id             # [auth + premium]
 List response: `{ "data": [...], "count": N }`
 Single response: `{ "data": { ... } }`
 Not found: `{ "error": "technique not found" }` with HTTP 404.
+=======
+>>>>>>> Stashed changes
 
 ---
 
@@ -138,7 +150,11 @@ Not found: `{ "error": "technique not found" }` with HTTP 404.
 
 ```
 User signs up
+<<<<<<< Updated upstream
   → Supabase user created
+=======
+  → user created in DB
+>>>>>>> Stashed changes
   → Stripe customer created automatically
 
 User subscribes
@@ -229,8 +245,26 @@ journal_entries (
 
 ---
 
+<<<<<<< Updated upstream
 ## Deployment 🌐
 
+=======
+## Go dependencies
+
+| Package                | Role                                |
+| ---------------------- | ----------------------------------- |
+| `go-chi/chi`           | Router — stdlib-first, idiomatic Go |
+| `stripe/stripe-go/v82` | Stripe billing & webhook handling   |
+| `golang-jwt/jwt`       | JWT auth                            |
+| `lib/pq`               | PostgreSQL driver                   |
+| `testify/testify`      | Test assertions                     |
+| `joho/godotenv`        | Env vars                            |
+
+---
+
+## Deployment 🌐
+
+>>>>>>> Stashed changes
 | Target      | Platform       |
 | ----------- | -------------- |
 | Mobile app  | Expo EAS Build |
