@@ -1,9 +1,6 @@
 package main
 
-
-
 import (
-
 	"database/sql"
 
 	"log"
@@ -11,8 +8,6 @@ import (
 	"net/http"
 
 	"os"
-
-
 
 	"github.com/go-chi/chi/v5"
 
@@ -23,8 +18,6 @@ import (
 	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq"
-
-
 
 	"github.com/N95Ryan/flip-back/data"
 
@@ -37,16 +30,11 @@ import (
 	"github.com/N95Ryan/flip-back/internal/service"
 
 	"github.com/stripe/stripe-go/v82"
-
 )
-
-
 
 func main() {
 
 	_ = godotenv.Load()
-
-
 
 	port := os.Getenv("PORT")
 
@@ -55,8 +43,6 @@ func main() {
 		port = "8080"
 
 	}
-
-
 
 	jwtSecret := os.Getenv("JWT_SECRET")
 
@@ -87,8 +73,6 @@ func main() {
 
 	}
 
-
-
 	db, err := sql.Open("postgres", dbURL)
 
 	if err != nil {
@@ -98,22 +82,14 @@ func main() {
 	}
 
 	if err := db.Ping(); err != nil {
-
-		log.Fatal(err)
-
+		log.Printf("WARNING: database ping failed: %v", err)
 	}
-
-	defer db.Close()
-
-
 
 	techniqueRepo := repository.NewTechniqueRepository(data.Techniques)
 
 	techniqueSvc := service.NewTechniqueService(techniqueRepo)
 
 	techniqueHandler := handler.NewTechniqueHandler(techniqueSvc)
-
-
 
 	userRepo := repository.NewUserRepository(db)
 
@@ -138,22 +114,15 @@ func main() {
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 
 		AllowedHeaders: []string{"Accept", "Content-Type", "Authorization"},
-
 	}))
-
-
 
 	r.Post("/auth/register", authHandler.Register)
 
 	r.Post("/auth/login", authHandler.Login)
 
-
-
 	r.Get("/techniques", techniqueHandler.ListTechniques)
 
 	r.Get("/techniques/{id}", techniqueHandler.GetTechnique)
-
-
 
 	r.Group(func(r chi.Router) {
 		r.Use(authmiddleware.AuthMiddleware(jwtSecret))
@@ -171,8 +140,6 @@ func main() {
 		r.Delete("/journal/{id}", journalHandler.DeleteEntry)
 	})
 
-
-
 	log.Printf("Server running on port %s", port)
 
 	if err := http.ListenAndServe("0.0.0.0:"+port, r); err != nil {
@@ -182,4 +149,3 @@ func main() {
 	}
 
 }
-
