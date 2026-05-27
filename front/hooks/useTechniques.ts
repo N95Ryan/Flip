@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { CategoryFilterValue, Technique, TechniquesResponse } from '@/types/technique';
+import type {
+  CategoryFilterValue,
+  SubcategoryFilterValue,
+  Technique,
+  TechniquesResponse,
+} from '@/types/technique';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -11,7 +16,10 @@ interface UseTechniquesResult {
   refetch: () => void;
 }
 
-export function useTechniques(category: CategoryFilterValue = 'all'): UseTechniquesResult {
+export function useTechniques(
+  category: CategoryFilterValue = 'all',
+  subcategory: SubcategoryFilterValue = 'all'
+): UseTechniquesResult {
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +41,11 @@ export function useTechniques(category: CategoryFilterValue = 'all'): UseTechniq
       }
 
       const json = (await response.json()) as TechniquesResponse;
-      setTechniques(json.data ?? []);
+      const filtered =
+        subcategory === 'all'
+          ? json.data
+          : json.data.filter((t) => t.subcategory === subcategory);
+      setTechniques(filtered ?? []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong';
       setError(message);
@@ -41,7 +53,7 @@ export function useTechniques(category: CategoryFilterValue = 'all'): UseTechniq
     } finally {
       setLoading(false);
     }
-  }, [category]);
+  }, [category, subcategory]);
 
   useEffect(() => {
     void fetchTechniques();

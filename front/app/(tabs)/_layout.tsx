@@ -1,34 +1,9 @@
-import { AntDesign } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import { View } from 'react-native';
+import { AntDesign } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
 
-type TabIconProps = {
-  name: React.ComponentProps<typeof AntDesign>['name'];
-  color: string;
-  isActive: boolean;
-};
-
-function TabIcon({ name, color, isActive }: TabIconProps) {
-  const icon = <AntDesign name={name} size={20} color={color} />;
-
-  if (isActive) {
-    return (
-      <View
-        style={{
-          backgroundColor: '#F7F2E9',
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          marginBottom: 4,
-        }}
-      >
-        {icon}
-      </View>
-    );
-  }
-
-  return icon;
-}
+const ICON_SIZE = 22;
+const ACTIVE_COLOR = "#FFFFFF";
+const INACTIVE_COLOR = "rgba(255,255,255,0.4)";
 
 export default function TabsLayout() {
   return (
@@ -36,50 +11,66 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          position: "absolute",
+          bottom: 24,
+          left: 24,
+          right: 24,
+          backgroundColor: "#34344A",
+          borderRadius: 32,
+          height: 64,
           borderTopWidth: 0,
           elevation: 8,
-          shadowColor: '#34344A',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.06,
-          shadowRadius: 12,
-          height: 80,
-          paddingBottom: 16,
-          paddingTop: 8,
+          shadowColor: "#34344A",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 16,
+          // paddingBottom: 6,
+          paddingTop: 6,
         },
-        tabBarActiveTintColor: '#BF1A2F',
-        tabBarInactiveTintColor: '#84714F',
+        tabBarActiveTintColor: ACTIVE_COLOR,
+        tabBarInactiveTintColor: INACTIVE_COLOR,
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
-          marginTop: 2,
+          fontWeight: 250,
         },
       }}
     >
       <Tabs.Screen
         name="library"
         options={{
-          title: 'Library',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="book" color={color} isActive={focused} />
+          title: "Library",
+          tabBarIcon: ({ focused }) => (
+            <AntDesign
+              name="book"
+              size={ICON_SIZE}
+              color={focused ? ACTIVE_COLOR : INACTIVE_COLOR}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
-          title: 'Journal',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="edit" color={color} isActive={focused} />
+          title: "Journal",
+          tabBarIcon: ({ focused }) => (
+            <AntDesign
+              name="edit"
+              size={ICON_SIZE}
+              color={focused ? ACTIVE_COLOR : INACTIVE_COLOR}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="user" color={color} isActive={focused} />
+          title: "Profile",
+          tabBarIcon: ({ focused }) => (
+            <AntDesign
+              name="user"
+              size={ICON_SIZE}
+              color={focused ? ACTIVE_COLOR : INACTIVE_COLOR}
+            />
           ),
         }}
       />
