@@ -1,18 +1,20 @@
 'use client';
 
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -77,9 +79,11 @@ export default function LoginScreen() {
     <Text style={styles.signInButtonText}>Sign in</Text>
   );
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
-      <ScrollView
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={{ flex: 1 }}>
+        <SafeAreaView style={styles.safeArea}>
+          <StatusBar style="dark" />
+          <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="always"
         showsVerticalScrollIndicator={false}
@@ -168,10 +172,10 @@ export default function LoginScreen() {
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </Pressable>
           <Pressable style={styles.appleButton}>
-            <AntDesign
-              name="apple1"
-              size={SOCIAL_ICON_SIZE}
-              color={APPLE_ICON_COLOR}
+            <Ionicons
+              name="logo-apple"
+              size={18}
+              color="#FFFFFF"
             />
             <Text style={styles.appleButtonText}>Continue with Apple</Text>
           </Pressable>
@@ -202,8 +206,10 @@ export default function LoginScreen() {
             </Pressable>
           )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
