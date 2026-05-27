@@ -1,8 +1,6 @@
-import { AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-import { Colors } from "@/constants/colors";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 type BackButtonProps = {
   onPress?: () => void;
@@ -24,7 +22,7 @@ export function BackButton({
     >
       <View style={styles.container}>
         <View style={styles.iconWrap}>
-          <AntDesign name="arrowleft" size={24} color={Colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color="#34344A" />
         </View>
       </View>
     </TouchableOpacity>
@@ -39,18 +37,13 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   iconWrap: {
-    backgroundColor: Colors.surface,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 8,
     elevation: 2,
-    shadowColor: Colors.textPrimary,
+    shadowColor: "#34344A",
     shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textPrimary,
   },
 });
