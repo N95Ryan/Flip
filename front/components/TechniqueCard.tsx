@@ -8,13 +8,20 @@ interface TechniqueCardProps {
 }
 
 const DIFFICULTY_COLORS: Record<TechniqueDifficulty, string> = {
-  beginner: '#27AE60',
-  intermediate: '#E67E22',
-  advanced: '#C0392B',
+  beginner: '#2D6A4F',
+  intermediate: '#84714F',
+  advanced: '#BF1A2F',
 };
 
 function formatDifficulty(difficulty: TechniqueDifficulty): string {
   return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+}
+
+function formatSubcategory(subcategory: string): string {
+  return subcategory
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join('-');
 }
 
 export function TechniqueCard({ technique }: TechniqueCardProps) {
@@ -25,7 +32,7 @@ export function TechniqueCard({ technique }: TechniqueCardProps) {
       <View style={styles.header}>
         <View style={styles.titleBlock}>
           <Text style={styles.name}>{technique.name}</Text>
-          <Text style={styles.subcategory}>{technique.subcategory}</Text>
+          <Text style={styles.subcategory}>{formatSubcategory(technique.subcategory)}</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: badgeColor }]}>
           <Text style={styles.badgeText}>{formatDifficulty(technique.difficulty)}</Text>
@@ -53,6 +60,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: 16,
     marginBottom: 12,
+    elevation: 2,
+    shadowColor: Colors.textPrimary,
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
   },
   header: {
     flexDirection: 'row',
@@ -72,7 +84,6 @@ const styles = StyleSheet.create({
   subcategory: {
     fontSize: 13,
     color: Colors.textMuted,
-    textTransform: 'capitalize',
   },
   badge: {
     paddingHorizontal: 10,
@@ -82,7 +93,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: Colors.surface,
     textTransform: 'uppercase',
   },
   tags: {
