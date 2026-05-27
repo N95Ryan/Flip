@@ -140,9 +140,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: 24,
+    paddingBottom: 120,
     paddingHorizontal: 20,
-    paddingVertical: 32,
     gap: 40,
   },
   card: {
