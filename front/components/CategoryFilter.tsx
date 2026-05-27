@@ -58,6 +58,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   pillTextActive: {
-    color: Colors.textPrimary,
+    color: Colors.surface,
   },
 });

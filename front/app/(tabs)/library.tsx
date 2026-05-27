@@ -22,6 +22,7 @@ export default function LibraryScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Library</Text>
+        <Text style={styles.subtitle}>Techniques de judo</Text>
       </View>
 
       <View style={styles.filter}>
@@ -69,9 +70,14 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginBottom: 8,
   },
   filter: {
     paddingHorizontal: 20,

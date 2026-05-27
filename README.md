@@ -34,8 +34,8 @@ Flip/
 | -------- | ------------------------------------ |
 | Mobile   | Expo, React Native, TypeScript       |
 | Backend  | Go, Chi                              |
-| Auth     | Supabase Auth (JWT)                  |
-| Database | Supabase PostgreSQL                  |
+| Auth     | JWT (custom Go implementation)       |
+| Database | Neon PostgreSQL                      |
 | Billing  | Stripe (subscriptions + webhooks)    |
 | Deploy   | Expo EAS (mobile) · Render (backend) |
 | Tests    | Go testing + testify                 |
@@ -48,6 +48,7 @@ Flip/
 
 - React Native + TypeScript
 - Expo + Expo Router v3
+- Zustand (auth state)
 - StyleSheet (no NativeWind)
 
 **Backend**
@@ -121,24 +122,13 @@ PUT    /journal/:id             # [auth + premium]
 DELETE /journal/:id             # [auth + premium]
 ```
 
-### Techniques API
-
-| Method | Path               | Description                      |
-| ------ | ------------------ | -------------------------------- |
-| `GET`  | `/techniques`      | List all (`?category=` optional) |
-| `GET`  | `/techniques/{id}` | One technique by id              |
-
-List response: `{ "data": [...], "count": N }`
-Single response: `{ "data": { ... } }`
-Not found: `{ "error": "technique not found" }` with HTTP 404.
-
 ---
 
 ## Billing — Webhook flow
 
 ```
 User signs up
-  → Supabase user created
+  → user created in DB
   → Stripe customer created automatically
 
 User subscribes
@@ -226,6 +216,19 @@ journal_entries (
   created_at       timestamptz DEFAULT now()
 )
 ```
+
+---
+
+## Go dependencies
+
+| Package                | Role                                |
+| ---------------------- | ----------------------------------- |
+| `go-chi/chi`           | Router — stdlib-first, idiomatic Go |
+| `stripe/stripe-go/v82` | Stripe billing & webhook handling   |
+| `golang-jwt/jwt`       | JWT auth                            |
+| `lib/pq`               | PostgreSQL driver                   |
+| `testify/testify`      | Test assertions                     |
+| `joho/godotenv`        | Env vars                            |
 
 ---
 
