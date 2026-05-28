@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackButton } from "@/components/BackButton";
+import { LibraryRoutes } from "@/constants/libraryRoutes";
 import type { TechniqueCategory } from "@/types/technique";
 
 type SubcategoryItem = {
@@ -107,7 +108,11 @@ export default function SubcategoriesScreen() {
               { borderLeftColor: sub.color },
               pressed && styles.cardPressed,
             ]}
-            onPress={() => router.push(`/library/${category}/${sub.value}`)}
+            onPress={() =>
+              router.push(
+                LibraryRoutes.techniqueSubcategory(category ?? '', sub.value),
+              )
+            }
           >
             <Text style={styles.label}>{sub.label}</Text>
             <Text style={styles.translation}>{sub.translation}</Text>

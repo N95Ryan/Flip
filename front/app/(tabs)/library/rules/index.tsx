@@ -2,77 +2,60 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BackButton } from '@/components/BackButton';
 import { Colors } from '@/constants/colors';
-import { LibraryRoutes } from '@/constants/libraryRoutes';
-import { useAuthStore } from '@/store/authStore';
 
-type LibraryCard = {
+type RulesCard = {
   emoji: string;
   borderColor: string;
   title: string;
   subtitle: string;
   description: string;
-  route:
-    | typeof LibraryRoutes.rules
-    | typeof LibraryRoutes.moralCode
-    | typeof LibraryRoutes.techniques;
+  route: '/library/rules/ukemi' | '/library/rules/scoring' | '/library/rules/combats';
 };
 
-const LIBRARY_CARDS: LibraryCard[] = [
+const RULES_CARDS: RulesCard[] = [
   {
-    emoji: '📋',
+    emoji: '🤸',
     borderColor: '#BF1A2F',
-    title: 'Rules',
-    subtitle: 'How judo works',
-    description: 'Ukemi · Scoring · Combats',
-    route: LibraryRoutes.rules,
+    title: 'Ukemi',
+    subtitle: 'Breakfalls',
+    description: 'The foundation of safe judo practice',
+    route: '/library/rules/ukemi',
   },
   {
-    emoji: '🎌',
-    borderColor: '#2D6A4F',
-    title: 'Moral Code',
-    subtitle: 'The values of judo',
-    description: '7 core principles of the judoka',
-    route: LibraryRoutes.moralCode,
+    emoji: '🏆',
+    borderColor: '#84714F',
+    title: 'Scoring',
+    subtitle: 'Points & penalties',
+    description: 'Ippon · Waza-ari · Shido · Hansoku-make',
+    route: '/library/rules/scoring',
   },
   {
-    emoji: '🥋',
+    emoji: '⚔️',
     borderColor: '#2563EB',
-    title: 'Techniques',
-    subtitle: 'Judo techniques library',
-    description: 'Throws · Ground work · Strikes',
-    route: LibraryRoutes.techniques,
+    title: 'Combats',
+    subtitle: 'Types of practice',
+    description: 'Randori · Shiai · Kata · Newaza',
+    route: '/library/rules/combats',
   },
 ];
 
-export default function LibraryScreen() {
+export default function RulesScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.welcomeBack}>Welcome back,</Text>
-        <Text style={styles.welcomeName}>
-          {user?.email?.split('@')[0]} 👋
-        </Text>
-        <Text style={styles.date}>{today}</Text>
-        <View style={styles.separator} />
+        <BackButton />
+        <Text style={styles.headerTitle}>Rules</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionLabel}>What do you want to study?</Text>
-
-        {LIBRARY_CARDS.map((card) => (
+        {RULES_CARDS.map((card) => (
           <Pressable
             key={card.route}
             style={({ pressed }) => [
@@ -99,44 +82,25 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
-  },
-  welcomeBack: {
-    fontSize: 14,
-    color: '#84714F',
-  },
-  welcomeName: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#34344A',
-    marginTop: 2,
-  },
-  date: {
-    fontSize: 13,
-    color: '#84714F',
-    marginTop: 4,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#E8E0D0',
-    marginTop: 16,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 120,
-    flexGrow: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
     gap: 12,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#84714F',
-    marginBottom: 16,
-    marginTop: 8,
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 32,
+    gap: 40,
   },
   card: {
     backgroundColor: Colors.surface,
