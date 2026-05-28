@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { TechniqueCard } from '@/components/TechniqueCard';
 import { Colors } from '@/constants/colors';
+import { LibraryRoutes } from '@/constants/libraryRoutes';
 import { useTechniques } from '@/hooks/useTechniques';
 import type { CategoryFilterValue, SubcategoryFilterValue } from '@/types/technique';
 
@@ -58,7 +59,13 @@ export default function SubcategoryTechniquesScreen() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() =>
-                router.push(`/library/${category}/${subcategory}/${item.id}`)
+                router.push(
+                  LibraryRoutes.techniqueDetail(
+                    category ?? '',
+                    subcategory ?? '',
+                    item.id,
+                  ),
+                )
               }
               style={({ pressed }) => pressed && styles.cardPressed}
             >
