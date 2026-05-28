@@ -3,50 +3,45 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/colors';
+import { LibraryRoutes } from '@/constants/libraryRoutes';
 import { useAuthStore } from '@/store/authStore';
-import type { TechniqueCategory } from '@/types/technique';
 
-type CategoryCard = {
-  id: TechniqueCategory;
+type LibraryCard = {
   emoji: string;
   borderColor: string;
-  countColor: string;
   title: string;
   subtitle: string;
   description: string;
-  count: string;
+  route:
+    | typeof LibraryRoutes.rules
+    | typeof LibraryRoutes.moralCode
+    | typeof LibraryRoutes.techniques;
 };
 
-const CATEGORY_CARDS: CategoryCard[] = [
+const LIBRARY_CARDS: LibraryCard[] = [
   {
-    id: 'nage-waza',
-    emoji: '🥋',
+    emoji: '📋',
     borderColor: '#BF1A2F',
-    countColor: '#BF1A2F',
-    title: 'Nage-waza',
-    subtitle: 'Throwing techniques',
-    description: 'Arm throws · Hip throws · Leg sweeps · Sacrifice throws',
-    count: '6 techniques',
+    title: 'Rules',
+    subtitle: 'How judo works',
+    description: 'Ukemi · Scoring · Combats',
+    route: LibraryRoutes.rules,
   },
   {
-    id: 'katame-waza',
-    emoji: '🤼',
+    emoji: '🎌',
     borderColor: '#2D6A4F',
-    countColor: '#2D6A4F',
-    title: 'Katame-waza',
-    subtitle: 'Ground techniques',
-    description: 'Pins · Chokes · Armlocks',
-    count: '4 techniques',
+    title: 'Moral Code',
+    subtitle: 'The values of judo',
+    description: '7 core principles of the judoka',
+    route: LibraryRoutes.moralCode,
   },
   {
-    id: 'atemi-waza',
-    emoji: '👊',
+    emoji: '🥋',
     borderColor: '#2563EB',
-    countColor: '#2563EB',
-    title: 'Atemi-waza',
-    subtitle: 'Striking techniques',
-    description: 'Arm strikes · Kicks',
-    count: '2 techniques',
+    title: 'Techniques',
+    subtitle: 'Judo techniques library',
+    description: 'Throws · Ground work · Strikes',
+    route: LibraryRoutes.techniques,
   },
 ];
 
@@ -54,39 +49,43 @@ export default function LibraryScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
 
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.welcomeBack}>Welcome back,</Text>
+        <Text style={styles.welcomeName}>
+          {user?.email?.split('@')[0]} 👋
+        </Text>
+        <Text style={styles.date}>{today}</Text>
+        <View style={styles.separator} />
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.welcome}>
-          <Text style={styles.welcomeBack}>Welcome back,</Text>
-          <Text style={styles.welcomeName}>
-            {user?.email.split('@')[0]} 👋
-          </Text>
-        </View>
+        <Text style={styles.sectionLabel}>What do you want to study?</Text>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Library</Text>
-          <Text style={styles.sectionSubtitle}>What do you want to study?</Text>
-        </View>
-
-        {CATEGORY_CARDS.map((card) => (
+        {LIBRARY_CARDS.map((card) => (
           <Pressable
-            key={card.id}
+            key={card.route}
             style={({ pressed }) => [
               styles.card,
               { borderLeftColor: card.borderColor },
               pressed && styles.cardPressed,
             ]}
-            onPress={() => router.push(`/library/${card.id}`)}
+            onPress={() => router.push(card.route)}
           >
             <Text style={styles.emoji}>{card.emoji}</Text>
             <Text style={styles.cardTitle}>{card.title}</Text>
             <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
             <Text style={styles.cardDescription}>{card.description}</Text>
-            <Text style={[styles.cardCount, { color: card.countColor }]}>{card.count}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -98,40 +97,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingBottom: 80,
   },
-  welcome: {
-    marginBottom: 0,
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   welcomeBack: {
     fontSize: 14,
     color: '#84714F',
   },
   welcomeName: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: 'bold',
     color: '#34344A',
-    marginBottom: 24,
+    marginTop: 2,
   },
-  header: {
-    marginBottom: 0,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
+  date: {
+    fontSize: 13,
     color: '#84714F',
-    marginBottom: 16,
+    marginTop: 4,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E8E0D0',
+    marginTop: 16,
   },
   scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 120,
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 32,
     gap: 12,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#84714F',
+    marginBottom: 16,
+    marginTop: 8,
   },
   card: {
     backgroundColor: Colors.surface,
@@ -165,10 +170,5 @@ const styles = StyleSheet.create({
   cardDescription: {
     fontSize: 13,
     color: Colors.textMuted,
-    marginBottom: 6,
-  },
-  cardCount: {
-    fontSize: 13,
-    fontWeight: '600',
   },
 });
