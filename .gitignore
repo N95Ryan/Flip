@@ -17,6 +17,7 @@ expo-env.d.ts
 # @end expo-cli
 
 # --- Backend (Go) ---
+back/uploads/
 *.exe
 *.exe~
 *.dll
@@ -26,6 +27,7 @@ back/main
 back/flip-back
 back/bin/
 back/dist/
+back/server
 *.test
 *.out
 coverage.html

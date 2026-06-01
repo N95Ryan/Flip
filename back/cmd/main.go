@@ -2,11 +2,9 @@ package main
 
 import (
 	"database/sql"
-
+	"fmt"
 	"log"
-
 	"net/http"
-
 	"os"
 
 	"github.com/go-chi/chi/v5"
@@ -28,9 +26,45 @@ import (
 	"github.com/N95Ryan/flip-back/internal/repository"
 
 	"github.com/N95Ryan/flip-back/internal/service"
+	"github.com/N95Ryan/flip-back/internal/storage"
 
 	"github.com/stripe/stripe-go/v82"
 )
+
+func initAvatarStore(port string) (service.AvatarStorage, string, error) {
+	if bucket := os.Getenv("S3_BUCKET"); bucket != "" {
+		store, err := storage.NewS3AvatarStore(storage.S3Config{
+			Endpoint:        os.Getenv("S3_ENDPOINT"),
+			Region:          envOrDefault("S3_REGION", "auto"),
+			Bucket:          bucket,
+			AccessKeyID:     os.Getenv("S3_ACCESS_KEY_ID"),
+			SecretAccessKey: os.Getenv("S3_SECRET_ACCESS_KEY"),
+			PublicBaseURL:   os.Getenv("S3_PUBLIC_BASE_URL"),
+		})
+		if err != nil {
+			return nil, "", err
+		}
+		return store, "", nil
+	}
+
+	dir := envOrDefault("AVATAR_UPLOAD_DIR", "./uploads/avatars")
+	publicBase := os.Getenv("AVATAR_PUBLIC_BASE_URL")
+	if publicBase == "" {
+		publicBase = fmt.Sprintf("http://localhost:%s", port)
+	}
+	store, err := storage.NewLocalAvatarStore(dir, publicBase)
+	if err != nil {
+		return nil, "", err
+	}
+	return store, dir, nil
+}
+
+func envOrDefault(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
 
 func main() {
 
@@ -103,6 +137,16 @@ func main() {
 	journalSvc := service.NewJournalService(journalRepo)
 	journalHandler := handler.NewJournalHandler(journalSvc)
 
+	avatarStore, avatarDir, err := initAvatarStore(port)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if os.Getenv("RENDER") != "" && os.Getenv("S3_BUCKET") == "" {
+		log.Printf("WARNING: RENDER deploy without S3_BUCKET — avatar uploads use ephemeral disk; set S3_* env for production photos")
+	}
+	profileSvc := service.NewProfileService(userRepo, avatarStore)
+	profileHandler := handler.NewProfileHandler(profileSvc)
+
 	r := chi.NewRouter()
 
 	r.Use(chimiddleware.Logger)
@@ -111,7 +155,7 @@ func main() {
 
 		AllowedOrigins: []string{"*"},
 
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 
 		AllowedHeaders: []string{"Accept", "Content-Type", "Authorization"},
 	}))
@@ -124,9 +168,17 @@ func main() {
 
 	r.Get("/techniques/{id}", techniqueHandler.GetTechnique)
 
+	if avatarDir != "" {
+		r.Handle("/avatars/*", http.StripPrefix("/avatars/", http.FileServer(http.Dir(avatarDir))))
+	}
+
 	r.Group(func(r chi.Router) {
 		r.Use(authmiddleware.AuthMiddleware(jwtSecret))
 		r.Post("/billing/checkout", billingHandler.CreateCheckout)
+		r.Get("/users/me", profileHandler.GetMe)
+		r.Patch("/users/me", profileHandler.PatchMe)
+		r.Post("/users/me/avatar", profileHandler.UploadAvatar)
+		r.Delete("/users/me/avatar", profileHandler.DeleteAvatar)
 	})
 
 	r.Post("/billing/webhook", billingHandler.HandleWebhook)

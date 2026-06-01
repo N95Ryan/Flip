@@ -1,7 +1,12 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActionSheetIOS,
+  ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -11,33 +16,210 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/colors';
-import { useAuthStore } from '@/store/authStore';
+import { apiFetchAuth, formatAvatarUploadError, uploadAvatar } from '@/lib/api';
+import { normalizeUsernameInput, validateUsername } from '@/lib/username';
+import {
+  avatarInitial,
+  emailUsernameFallback,
+  useAuthStore,
+  type User,
+} from '@/store/authStore';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateProfile, refreshUser, setUser } = useAuthStore();
   const [username, setUsername] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
 
   useEffect(() => {
-    if (user?.email) {
-      setUsername(user.email.split('@')[0] ?? '');
+    if (user) {
+      setUsername(user.username ?? emailUsernameFallback(user.email));
     }
-  }, [user?.email]);
+  }, [user?.id, user?.username, user?.email]);
 
-  const initial = user?.email?.charAt(0).toUpperCase() ?? '?';
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser().catch(() => {
+        // pas de session valide
+      });
+    }, [refreshUser])
+  );
 
   const handleSignOut = async () => {
     await logout();
     router.replace('/auth/login');
   };
 
+  const handleUsernameBlur = () => {
+    const normalized = normalizeUsernameInput(username);
+    if (normalized !== username.trim()) {
+      setUsername(normalized);
+    }
+  };
+
+  const handleSaveUsername = async () => {
+    const normalized = normalizeUsernameInput(username);
+    const validationError = validateUsername(normalized);
+    if (validationError) {
+      Alert.alert('Username', validationError);
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateProfile(normalized);
+      setUsername(normalized);
+      Alert.alert('Profil', 'Username enregistré.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur';
+      Alert.alert('Profil', message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const pickImage = async (useCamera: boolean) => {
+    const permission = useCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission', 'Accès refusé.');
+      return;
+    }
+
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        })
+      : await ImagePicker.launchImageLibraryAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType ?? 'image/jpeg';
+
+    setAvatarLoading(true);
+    try {
+      const data = await uploadAvatar<{ user: User }>(asset.uri, mimeType);
+      setUser(data.user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur';
+      Alert.alert('Photo', formatAvatarUploadError(message));
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    setAvatarLoading(true);
+    try {
+      const data = await apiFetchAuth<{ user: typeof user }>('/users/me/avatar', {
+        method: 'DELETE',
+      });
+      if (data.user) setUser(data.user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur';
+      Alert.alert('Photo', formatAvatarUploadError(message));
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const showAvatarOptions = () => {
+    const hasAvatar = Boolean(user?.avatar_url);
+    const options = hasAvatar
+      ? ['Ajouter une nouvelle photo', 'Supprimer la photo', 'Annuler']
+      : ['Ajouter une nouvelle photo', 'Annuler'];
+    const cancelIndex = options.length - 1;
+    const destructiveIndex = hasAvatar ? 1 : undefined;
+
+    const onSelect = (index: number) => {
+      if (index === cancelIndex) return;
+      if (hasAvatar && index === 1) {
+        Alert.alert('Supprimer la photo', 'Confirmer la suppression ?', [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Supprimer', style: 'destructive', onPress: handleDeleteAvatar },
+        ]);
+        return;
+      }
+      if (index === 0) {
+        if (Platform.OS === 'ios') {
+          ActionSheetIOS.showActionSheetWithOptions(
+            {
+              options: ['Bibliothèque', 'Appareil photo', 'Annuler'],
+              cancelButtonIndex: 2,
+            },
+            (i) => {
+              if (i === 0) pickImage(false);
+              if (i === 1) pickImage(true);
+            }
+          );
+        } else {
+          Alert.alert('Photo', 'Choisir une source', [
+            { text: 'Bibliothèque', onPress: () => pickImage(false) },
+            { text: 'Appareil photo', onPress: () => pickImage(true) },
+            { text: 'Annuler', style: 'cancel' },
+          ]);
+        }
+      }
+    };
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: cancelIndex,
+          destructiveButtonIndex: destructiveIndex,
+        },
+        onSelect
+      );
+    } else {
+      const buttons = options.slice(0, -1).map((label, index) => ({
+        text: label,
+        style: (hasAvatar && index === 1 ? 'destructive' : 'default') as
+          | 'default'
+          | 'destructive'
+          | 'cancel',
+        onPress: () => onSelect(index),
+      }));
+      Alert.alert('Photo de profil', undefined, [
+        ...buttons,
+        { text: 'Annuler', style: 'cancel' },
+      ]);
+    }
+  };
+
+  const initial = avatarInitial(user);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
-        </View>
+        <Pressable
+          style={styles.avatarPressable}
+          onPress={showAvatarOptions}
+          disabled={avatarLoading}
+        >
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
+          )}
+          {avatarLoading && (
+            <View style={styles.avatarOverlay}>
+              <ActivityIndicator color="#FFFFFF" />
+            </View>
+          )}
+        </Pressable>
 
+        <Text style={styles.avatarHint}>Toucher pour changer la photo</Text>
         <Text style={styles.email}>{user?.email ?? ''}</Text>
 
         <View style={styles.field}>
@@ -46,13 +228,23 @@ export default function ProfileScreen() {
             style={styles.input}
             value={username}
             onChangeText={setUsername}
+            onBlur={handleUsernameBlur}
             autoCapitalize="none"
+            autoCorrect={false}
           />
+          <Text style={styles.fieldHint}>
+            Lettres, chiffres et underscore — pas d&apos;espace
+          </Text>
           <Pressable
-            style={styles.saveButton}
-            onPress={() => Alert.alert('Coming soon')}
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            onPress={handleSaveUsername}
+            disabled={saving}
           >
-            <Text style={styles.saveButtonText}>Save</Text>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save</Text>
+            )}
           </Pressable>
         </View>
 
@@ -76,6 +268,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingTop: 40,
   },
+  avatarPressable: {
+    width: 80,
+    height: 80,
+    marginBottom: 8,
+    position: 'relative',
+  },
   avatar: {
     width: 80,
     height: 80,
@@ -83,12 +281,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#34344A',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: {
     fontSize: 32,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  avatarHint: {
+    fontSize: 12,
+    color: '#84714F',
+    marginBottom: 8,
   },
   email: {
     fontSize: 16,
@@ -105,6 +319,11 @@ const styles = StyleSheet.create({
     color: '#84714F',
     marginBottom: 4,
   },
+  fieldHint: {
+    fontSize: 12,
+    color: '#84714F',
+    marginTop: 6,
+  },
   input: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -120,6 +339,9 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 8,
     alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
   },
   saveButtonText: {
     color: '#FFFFFF',
