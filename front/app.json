@@ -20,7 +20,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Flip a besoin d'accéder à vos photos pour votre avatar.",
+          "cameraPermission": "Flip a besoin d'accéder à la caméra pour votre avatar."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

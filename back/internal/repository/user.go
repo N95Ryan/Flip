@@ -22,30 +22,41 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 // ErrEmailExists is returned when registering with a duplicate email.
 var ErrEmailExists = errors.New("email already exists")
 
-// CreateUser inserts a new user and returns the created record.
-func (r *UserRepository) CreateUser(email, hashedPassword string) (*model.User, error) {
-	id := uuid.New().String()
+// ErrUsernameExists is returned when updating to a duplicate username.
+var ErrUsernameExists = errors.New("username already exists")
 
-	const q = `
-		INSERT INTO users (id, email, password_hash, subscription_status)
-		VALUES ($1, $2, $3, 'free')
-		RETURNING id, email, stripe_customer_id, subscription_status, created_at`
+const userSelectCols = `
+	id, email, username, avatar_url, password_hash,
+	stripe_customer_id, subscription_status, created_at`
 
+func scanUser(row interface {
+	Scan(dest ...any) error
+}, includePassword bool) (*model.User, error) {
 	var u model.User
-	var stripeID sql.NullString
-	err := r.db.QueryRow(q, id, email, hashedPassword).Scan(
+	var username, avatarURL, stripeID sql.NullString
+	var passwordHash string
+
+	dest := []any{
 		&u.ID,
 		&u.Email,
+		&username,
+		&avatarURL,
+		&passwordHash,
 		&stripeID,
 		&u.SubscriptionStatus,
 		&u.CreatedAt,
-	)
-	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			return nil, ErrEmailExists
-		}
+	}
+	if err := row.Scan(dest...); err != nil {
 		return nil, err
+	}
+	if includePassword {
+		u.PasswordHash = passwordHash
+	}
+	if username.Valid {
+		u.Username = username.String
+	}
+	if avatarURL.Valid {
+		u.AvatarURL = avatarURL.String
 	}
 	if stripeID.Valid {
 		u.StripeCustomerID = stripeID.String
@@ -53,33 +64,94 @@ func (r *UserRepository) CreateUser(email, hashedPassword string) (*model.User, 
 	return &u, nil
 }
 
+// CreateUser inserts a new user and returns the created record.
+func (r *UserRepository) CreateUser(email, hashedPassword string) (*model.User, error) {
+	id := uuid.New().String()
+
+	const q = `
+		INSERT INTO users (id, email, password_hash, subscription_status)
+		VALUES ($1, $2, $3, 'free')
+		RETURNING ` + userSelectCols
+
+	row := r.db.QueryRow(q, id, email, hashedPassword)
+	u, err := scanUser(row, false)
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return nil, ErrEmailExists
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
 // GetUserByEmail returns the user with the given email, or nil if not found.
 func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
-	const q = `
-		SELECT id, email, password_hash, stripe_customer_id, subscription_status, created_at
-		FROM users
-		WHERE email = $1`
+	const q = `SELECT ` + userSelectCols + ` FROM users WHERE email = $1`
 
-	var u model.User
-	var stripeID sql.NullString
-	err := r.db.QueryRow(q, email).Scan(
-		&u.ID,
-		&u.Email,
-		&u.PasswordHash,
-		&stripeID,
-		&u.SubscriptionStatus,
-		&u.CreatedAt,
-	)
+	row := r.db.QueryRow(q, email)
+	u, err := scanUser(row, true)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	if stripeID.Valid {
-		u.StripeCustomerID = stripeID.String
+	return u, nil
+}
+
+// GetUserByID returns the user with the given ID, or nil if not found.
+func (r *UserRepository) GetUserByID(id string) (*model.User, error) {
+	const q = `SELECT ` + userSelectCols + ` FROM users WHERE id = $1`
+
+	row := r.db.QueryRow(q, id)
+	u, err := scanUser(row, false)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
 	}
-	return &u, nil
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+// UpdateUsername sets username for the given user.
+func (r *UserRepository) UpdateUsername(userID, username string) (*model.User, error) {
+	const q = `UPDATE users SET username = $2 WHERE id = $1 RETURNING ` + userSelectCols
+
+	row := r.db.QueryRow(q, userID, username)
+	u, err := scanUser(row, false)
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return nil, ErrUsernameExists
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
+// UpdateProfile updates avatar_url for the given user.
+// Pass a non-nil empty string for avatarURL to clear it.
+func (r *UserRepository) UpdateProfile(userID string, username, avatarURL *string) (*model.User, error) {
+	if username != nil {
+		return r.UpdateUsername(userID, *username)
+	}
+	if avatarURL == nil {
+		return r.GetUserByID(userID)
+	}
+
+	var avatarVal sql.NullString
+	if *avatarURL == "" {
+		avatarVal = sql.NullString{}
+	} else {
+		avatarVal = sql.NullString{String: *avatarURL, Valid: true}
+	}
+
+	const q = `UPDATE users SET avatar_url = $2 WHERE id = $1 RETURNING ` + userSelectCols
+
+	row := r.db.QueryRow(q, userID, avatarVal)
+	return scanUser(row, false)
 }
 
 // GetSubscriptionStatus returns the subscription_status for the given user ID.
