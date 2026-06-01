@@ -1,7 +1,7 @@
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -12,23 +12,23 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Colors } from '@/constants/colors';
-import { apiFetchAuth, formatAvatarUploadError, uploadAvatar } from '@/lib/api';
-import { normalizeUsernameInput, validateUsername } from '@/lib/username';
+import { Colors } from "@/constants/colors";
+import { apiFetchAuth, formatAvatarUploadError, uploadAvatar } from "@/lib/api";
+import { normalizeUsernameInput, validateUsername } from "@/lib/username";
 import {
   avatarInitial,
   emailUsernameFallback,
   useAuthStore,
   type User,
-} from '@/store/authStore';
+} from "@/store/authStore";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, updateProfile, refreshUser, setUser } = useAuthStore();
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState("");
   const [saving, setSaving] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
@@ -43,12 +43,12 @@ export default function ProfileScreen() {
       refreshUser().catch(() => {
         // pas de session valide
       });
-    }, [refreshUser])
+    }, [refreshUser]),
   );
 
   const handleSignOut = async () => {
     await logout();
-    router.replace('/auth/login');
+    router.replace("/auth/login");
   };
 
   const handleUsernameBlur = () => {
@@ -62,17 +62,17 @@ export default function ProfileScreen() {
     const normalized = normalizeUsernameInput(username);
     const validationError = validateUsername(normalized);
     if (validationError) {
-      Alert.alert('Username', validationError);
+      Alert.alert("Username", validationError);
       return;
     }
     setSaving(true);
     try {
       await updateProfile(normalized);
       setUsername(normalized);
-      Alert.alert('Profil', 'Username enregistré.');
+      Alert.alert("Profil", "Username enregistré.");
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur';
-      Alert.alert('Profil', message);
+      const message = err instanceof Error ? err.message : "Erreur";
+      Alert.alert("Profil", message);
     } finally {
       setSaving(false);
     }
@@ -83,7 +83,7 @@ export default function ProfileScreen() {
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission', 'Accès refusé.');
+      Alert.alert("Permission", "Accès refusé.");
       return;
     }
 
@@ -102,15 +102,15 @@ export default function ProfileScreen() {
     if (result.canceled || !result.assets[0]) return;
 
     const asset = result.assets[0];
-    const mimeType = asset.mimeType ?? 'image/jpeg';
+    const mimeType = asset.mimeType ?? "image/jpeg";
 
     setAvatarLoading(true);
     try {
       const data = await uploadAvatar<{ user: User }>(asset.uri, mimeType);
       setUser(data.user);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur';
-      Alert.alert('Photo', formatAvatarUploadError(message));
+      const message = err instanceof Error ? err.message : "Erreur";
+      Alert.alert("Photo", formatAvatarUploadError(message));
     } finally {
       setAvatarLoading(false);
     }
@@ -119,13 +119,16 @@ export default function ProfileScreen() {
   const handleDeleteAvatar = async () => {
     setAvatarLoading(true);
     try {
-      const data = await apiFetchAuth<{ user: typeof user }>('/users/me/avatar', {
-        method: 'DELETE',
-      });
+      const data = await apiFetchAuth<{ user: typeof user }>(
+        "/users/me/avatar",
+        {
+          method: "DELETE",
+        },
+      );
       if (data.user) setUser(data.user);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur';
-      Alert.alert('Photo', formatAvatarUploadError(message));
+      const message = err instanceof Error ? err.message : "Erreur";
+      Alert.alert("Photo", formatAvatarUploadError(message));
     } finally {
       setAvatarLoading(false);
     }
@@ -134,63 +137,67 @@ export default function ProfileScreen() {
   const showAvatarOptions = () => {
     const hasAvatar = Boolean(user?.avatar_url);
     const options = hasAvatar
-      ? ['Ajouter une nouvelle photo', 'Supprimer la photo', 'Annuler']
-      : ['Ajouter une nouvelle photo', 'Annuler'];
+      ? ["Ajouter une nouvelle photo", "Supprimer la photo", "Annuler"]
+      : ["Ajouter une nouvelle photo", "Annuler"];
     const cancelIndex = options.length - 1;
     const destructiveIndex = hasAvatar ? 1 : undefined;
 
     const onSelect = (index: number) => {
       if (index === cancelIndex) return;
       if (hasAvatar && index === 1) {
-        Alert.alert('Supprimer la photo', 'Confirmer la suppression ?', [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Supprimer', style: 'destructive', onPress: handleDeleteAvatar },
+        Alert.alert("Supprimer la photo", "Confirmer la suppression ?", [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: handleDeleteAvatar,
+          },
         ]);
         return;
       }
       if (index === 0) {
-        if (Platform.OS === 'ios') {
+        if (Platform.OS === "ios") {
           ActionSheetIOS.showActionSheetWithOptions(
             {
-              options: ['Bibliothèque', 'Appareil photo', 'Annuler'],
+              options: ["Bibliothèque", "Appareil photo", "Annuler"],
               cancelButtonIndex: 2,
             },
             (i) => {
               if (i === 0) pickImage(false);
               if (i === 1) pickImage(true);
-            }
+            },
           );
         } else {
-          Alert.alert('Photo', 'Choisir une source', [
-            { text: 'Bibliothèque', onPress: () => pickImage(false) },
-            { text: 'Appareil photo', onPress: () => pickImage(true) },
-            { text: 'Annuler', style: 'cancel' },
+          Alert.alert("Photo", "Choisir une source", [
+            { text: "Bibliothèque", onPress: () => pickImage(false) },
+            { text: "Appareil photo", onPress: () => pickImage(true) },
+            { text: "Annuler", style: "cancel" },
           ]);
         }
       }
     };
 
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options,
           cancelButtonIndex: cancelIndex,
           destructiveButtonIndex: destructiveIndex,
         },
-        onSelect
+        onSelect,
       );
     } else {
       const buttons = options.slice(0, -1).map((label, index) => ({
         text: label,
-        style: (hasAvatar && index === 1 ? 'destructive' : 'default') as
-          | 'default'
-          | 'destructive'
-          | 'cancel',
+        style: (hasAvatar && index === 1 ? "destructive" : "default") as
+          | "default"
+          | "destructive"
+          | "cancel",
         onPress: () => onSelect(index),
       }));
-      Alert.alert('Photo de profil', undefined, [
+      Alert.alert("Photo de profil", undefined, [
         ...buttons,
-        { text: 'Annuler', style: 'cancel' },
+        { text: "Annuler", style: "cancel" },
       ]);
     }
   };
@@ -206,7 +213,10 @@ export default function ProfileScreen() {
           disabled={avatarLoading}
         >
           {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+            <Image
+              source={{ uri: user.avatar_url }}
+              style={styles.avatarImage}
+            />
           ) : (
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initial}</Text>
@@ -219,8 +229,8 @@ export default function ProfileScreen() {
           )}
         </Pressable>
 
-        <Text style={styles.avatarHint}>Toucher pour changer la photo</Text>
-        <Text style={styles.email}>{user?.email ?? ''}</Text>
+        <Text style={styles.avatarHint}>Touch to change the avatar</Text>
+        <Text style={styles.email}>{user?.email ?? ""}</Text>
 
         <View style={styles.field}>
           <Text style={styles.label}>Username</Text>
@@ -233,7 +243,7 @@ export default function ProfileScreen() {
             autoCorrect={false}
           />
           <Text style={styles.fieldHint}>
-            Lettres, chiffres et underscore — pas d&apos;espace
+            Letters, numbers and underscore — no space
           </Text>
           <Pressable
             style={[styles.saveButton, saving && styles.saveButtonDisabled]}
@@ -264,7 +274,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 32,
     paddingTop: 40,
   },
@@ -272,15 +282,15 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     marginBottom: 8,
-    position: 'relative',
+    position: "relative",
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#34344A',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#34344A",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarImage: {
     width: 80,
@@ -289,79 +299,79 @@ const styles = StyleSheet.create({
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: "rgba(0,0,0,0.4)",
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   avatarHint: {
     fontSize: 12,
-    color: '#84714F',
+    color: "#84714F",
     marginBottom: 8,
   },
   email: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#34344A',
+    fontWeight: "600",
+    color: "#34344A",
     marginBottom: 32,
   },
   field: {
-    width: '100%',
+    width: "100%",
     marginBottom: 32,
   },
   label: {
     fontSize: 13,
-    color: '#84714F',
+    color: "#84714F",
     marginBottom: 4,
   },
   fieldHint: {
     fontSize: 12,
-    color: '#84714F',
+    color: "#84714F",
     marginTop: 6,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#E8E0D0',
+    borderColor: "#E8E0D0",
     borderRadius: 12,
     padding: 14,
-    color: '#34344A',
+    color: "#34344A",
     fontSize: 16,
   },
   saveButton: {
-    backgroundColor: '#BF1A2F',
+    backgroundColor: "#BF1A2F",
     borderRadius: 12,
     padding: 14,
     marginTop: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   saveButtonDisabled: {
     opacity: 0.7,
   },
   saveButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
     fontSize: 16,
   },
   signOutButton: {
-    width: '100%',
-    backgroundColor: 'transparent',
+    width: "100%",
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#BF1A2F',
+    borderColor: "#BF1A2F",
     borderRadius: 12,
     padding: 14,
-    alignItems: 'center',
-    marginTop: 'auto',
+    alignItems: "center",
+    marginTop: "auto",
     marginBottom: 24,
   },
   signOutText: {
-    color: '#BF1A2F',
-    fontWeight: '700',
+    color: "#BF1A2F",
+    fontWeight: "700",
     fontSize: 16,
   },
 });

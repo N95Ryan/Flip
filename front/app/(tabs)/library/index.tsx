@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/colors';
 import { LibraryRoutes } from '@/constants/libraryRoutes';
-import { useAuthStore } from '@/store/authStore';
+import { displayUsername, useAuthStore } from '@/store/authStore';
 
 type LibraryCard = {
   emoji: string;
@@ -60,7 +60,7 @@ export default function LibraryScreen() {
       <View style={styles.header}>
         <Text style={styles.welcomeBack}>Welcome back,</Text>
         <Text style={styles.welcomeName}>
-          {user?.email?.split('@')[0]} 👋
+          {displayUsername(user)} 👋
         </Text>
         <Text style={styles.date}>{today}</Text>
         <View style={styles.separator} />
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   welcomeBack: {
     fontSize: 14,
@@ -125,18 +125,16 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 4,
     paddingBottom: 120,
     flexGrow: 1,
-    justifyContent: 'center',
-    gap: 12,
+    gap: 20,
   },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#84714F',
-    marginBottom: 16,
-    marginTop: 8,
+    marginBottom: 12,
   },
   card: {
     backgroundColor: Colors.surface,
