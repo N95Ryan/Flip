@@ -88,9 +88,43 @@ DATABASE_URL=
 STRIPE_SECRET_KEY=
 STRIPE_PRICE_ID=
 STRIPE_WEBHOOK_SECRET=
+
+# Avatar storage (local dev default: ./uploads/avatars served at /avatars/*)
+AVATAR_UPLOAD_DIR=./uploads/avatars
+AVATAR_PUBLIC_BASE_URL=http://localhost:8080
+
+# Optional S3-compatible storage (Cloudflare R2, AWS S3)
+# S3_BUCKET=
+# S3_REGION=auto
+# S3_ENDPOINT=
+# S3_ACCESS_KEY_ID=
+# S3_SECRET_ACCESS_KEY=
+# S3_PUBLIC_BASE_URL=
 ```
 
 ### Frontend
+
+Create `front/.env` (see `front/.env.example` if present) with at least:
+
+```env
+EXPO_PUBLIC_API_URL=https://flip-back-m624.onrender.com
+```
+
+Use **one** `EXPO_PUBLIC_API_URL` line only — duplicate keys make the last value win and can point the app at an unreachable local IP on a physical device.
+
+| Target | `EXPO_PUBLIC_API_URL` |
+|--------|------------------------|
+| Expo Go on phone (recommended) | Render HTTPS URL |
+| Web + local Go API | `front/.env.local` with `http://localhost:8080` (gitignored) |
+
+After changing `.env`, restart Metro with a clean cache:
+
+```bash
+cd front
+npx expo start -c
+```
+
+In dev, the app logs `[Flip] API_URL = ...` on startup so you can confirm the loaded URL.
 
 ```bash
 cd front
@@ -101,6 +135,27 @@ bun run ios        # iOS simulator
 bun run web        # Web
 ```
 
+**Render (profile Save + photo):**
+
+1. Push `develop` (or your connected branch) — includes `back/` profile routes and [`render.yaml`](render.yaml).
+2. Render Dashboard → service `flip-back-m624` → **Manual Deploy** (Root Directory: `back`, or sync blueprint).
+3. **Environment** (required):
+   - `DATABASE_URL` — same Neon DB where [`back/migrations/003_user_profile.sql`](back/migrations/003_user_profile.sql) was applied.
+   - `JWT_SECRET`, `STRIPE_*` (unchanged if login already works).
+4. **Photos on Render** — set S3-compatible vars (see [`back/.env.example`](back/.env.example)): `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL`. Without `S3_BUCKET`, username Save can work but avatars are unreliable.
+
+Verify deployment:
+
+```bash
+curl.exe -s -o NUL -w "%{http_code}" https://flip-back-m624.onrender.com/techniques
+# expect 200
+
+curl.exe -s -o NUL -w "%{http_code}" -X PATCH https://flip-back-m624.onrender.com/users/me -H "Content-Type: application/json" -d "{\"username\":\"test\"}"
+# expect 401 (unauthorized) once profile routes are deployed; 404 means redeploy back/
+```
+
+Then Expo: `npx expo start -c` → Profil → Save `Big_Nayru` → check Neon `username` column.
+
 ---
 
 ## API Routes
@@ -108,6 +163,11 @@ bun run web        # Web
 ```
 POST   /auth/register
 POST   /auth/login
+
+GET    /users/me                # [auth]
+PATCH  /users/me                # [auth] — body: { "username": "..." }
+POST   /users/me/avatar         # [auth] — multipart field "file"
+DELETE /users/me/avatar         # [auth]
 
 GET    /techniques              # public
 GET    /techniques?category=    # filtered by category
@@ -192,6 +252,8 @@ Tests use `httptest` and interface-based mocks — no real DB or Stripe calls.
 users (
   id                   uuid PRIMARY KEY,
   email                text UNIQUE NOT NULL,
+  username             text UNIQUE,
+  avatar_url           text,
   stripe_customer_id   text,
   subscription_status  text DEFAULT 'free', -- free | active | inactive
   created_at           timestamptz DEFAULT now()

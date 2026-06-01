@@ -19,6 +19,15 @@ export async function getToken(): Promise<string | null> {
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
+/** Token from secure storage, falling back to in-memory auth state after login. */
+export async function getAuthToken(): Promise<string | null> {
+  const stored = await getToken();
+  if (stored) return stored;
+
+  const { useAuthStore } = await import('@/store/authStore');
+  return useAuthStore.getState().token;
+}
+
 export async function removeToken(): Promise<void> {
   if (Platform.OS === 'web') {
     localStorage.removeItem(TOKEN_KEY);

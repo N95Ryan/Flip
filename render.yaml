@@ -1,0 +1,31 @@
+# Render Blueprint — connect repo in dashboard or use "New > Blueprint".
+# Service name may differ; set Root Directory to `back` if creating manually.
+services:
+  - type: web
+    name: flip-back
+    runtime: go
+    rootDir: back
+    buildCommand: go build -o server ./cmd
+    startCommand: ./server
+    healthCheckPath: /techniques
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: PORT
+        value: "8080"
+      # Avatar uploads on Render (Cloudflare R2 or S3-compatible):
+      # - key: S3_BUCKET
+      # - key: S3_REGION
+      #   value: auto
+      # - key: S3_ENDPOINT
+      # - key: S3_ACCESS_KEY_ID
+      # - key: S3_SECRET_ACCESS_KEY
+      # - key: S3_PUBLIC_BASE_URL
