@@ -27,7 +27,7 @@ var ErrUsernameExists = errors.New("username already exists")
 
 const userSelectCols = `
 	id, email, username, avatar_url, password_hash,
-	stripe_customer_id, subscription_status, created_at`
+	stripe_customer_id, subscription_status, belt_level, techniques_studied, created_at`
 
 func scanUser(row interface {
 	Scan(dest ...any) error
@@ -44,6 +44,8 @@ func scanUser(row interface {
 		&passwordHash,
 		&stripeID,
 		&u.SubscriptionStatus,
+		&u.BeltLevel,
+		&u.TechniquesStudied,
 		&u.CreatedAt,
 	}
 	if err := row.Scan(dest...); err != nil {
@@ -199,5 +201,19 @@ func (r *UserRepository) UpdateSubscriptionByCustomerID(stripeCustomerID, status
 	const q = `UPDATE users SET subscription_status = $1 WHERE stripe_customer_id = $2`
 
 	_, err := r.db.Exec(q, status, stripeCustomerID)
+	return err
+}
+
+// IncrementTechniquesStudied adds one to techniques_studied for the given user.
+func (r *UserRepository) IncrementTechniquesStudied(userID string) error {
+	const q = `UPDATE users SET techniques_studied = techniques_studied + 1 WHERE id = $1`
+	_, err := r.db.Exec(q, userID)
+	return err
+}
+
+// UpdateBeltLevel sets belt_level for the given user.
+func (r *UserRepository) UpdateBeltLevel(userID, beltLevel string) error {
+	const q = `UPDATE users SET belt_level = $1 WHERE id = $2`
+	_, err := r.db.Exec(q, beltLevel, userID)
 	return err
 }

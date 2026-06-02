@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.flip.app"
     },
     "android": {
-      "package": "com.flip.app"
+      "package": "com.flip.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",

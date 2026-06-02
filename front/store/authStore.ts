@@ -10,6 +10,8 @@ export type User = {
   avatar_url?: string;
   stripe_customer_id: string;
   subscription_status: string;
+  belt_level: string;
+  techniques_studied: number;
   created_at: string;
 };
 
@@ -32,6 +34,7 @@ type AuthState = {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (username: string) => Promise<void>;
+  updateBeltLevel: (belt: string) => Promise<void>;
   setUser: (user: User) => void;
 };
 
@@ -95,6 +98,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const data = await apiFetchAuth<ProfileResponse>('/users/me', {
       method: 'PATCH',
       body: JSON.stringify({ username: username.trim() }),
+    });
+    set({ user: data.user });
+  },
+
+  updateBeltLevel: async (belt) => {
+    const data = await apiFetchAuth<ProfileResponse>('/users/me/belt', {
+      method: 'PATCH',
+      body: JSON.stringify({ belt_level: belt }),
     });
     set({ user: data.user });
   },
