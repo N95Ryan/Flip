@@ -29,6 +29,10 @@ type patchProfileRequest struct {
 	Username string `json:"username"`
 }
 
+type patchBeltRequest struct {
+	BeltLevel string `json:"belt_level"`
+}
+
 // GetMe handles GET /users/me.
 func (h *ProfileHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	userID, ok := authmiddleware.UserIDFromContext(r.Context())
@@ -128,6 +132,46 @@ func (h *ProfileHandler) DeleteAvatar(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, profileResponse{User: user})
 }
 
+// IncrementTechniquesStudied handles POST /users/me/technique-viewed.
+func (h *ProfileHandler) IncrementTechniquesStudied(w http.ResponseWriter, r *http.Request) {
+	userID, ok := authmiddleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	if err := h.svc.IncrementTechniquesStudied(userID); err != nil {
+		log.Printf("POST /users/me/technique-viewed user=%s err=%v", userID, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not update profile"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// UpdateBeltLevel handles PATCH /users/me/belt.
+func (h *ProfileHandler) UpdateBeltLevel(w http.ResponseWriter, r *http.Request) {
+	userID, ok := authmiddleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	var req patchBeltRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	user, err := h.svc.UpdateBeltLevel(userID, req.BeltLevel)
+	if err != nil {
+		h.writeProfileError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, profileResponse{User: user})
+}
+
 func (h *ProfileHandler) writeProfileError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrProfileNotFound):
@@ -140,6 +184,8 @@ func (h *ProfileHandler) writeProfileError(w http.ResponseWriter, err error) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "avatar must be 5 MB or smaller"})
 	case errors.Is(err, service.ErrAvatarInvalidType):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "avatar must be JPEG, PNG, or WebP"})
+	case errors.Is(err, service.ErrInvalidBeltLevel):
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid belt level"})
 	default:
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not update profile"})
 	}

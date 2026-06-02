@@ -1,4 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -11,6 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/BackButton';
 import { Colors } from '@/constants/colors';
 import { useTechnique } from '@/hooks/useTechnique';
+import { trackTechniqueView } from '@/lib/api';
+import { getToken } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 import type { TechniqueDifficulty } from '@/types/technique';
 
 const DIFFICULTY_COLORS: Record<TechniqueDifficulty, string> = {
@@ -33,6 +37,26 @@ function formatDifficulty(difficulty: TechniqueDifficulty): string {
 export default function TechniqueDetailScreen() {
   const { id, category } = useLocalSearchParams<{ id: string; category: string }>();
   const { technique, loading, error } = useTechnique(id ?? '');
+  const refreshUser = useAuthStore((s) => s.refreshUser);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const token = await getToken();
+      if (!token || cancelled) return;
+      await trackTechniqueView(token);
+      if (!cancelled) {
+        refreshUser().catch(() => {
+          // silent
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, refreshUser]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
