@@ -179,6 +179,8 @@ func main() {
 		r.Patch("/users/me", profileHandler.PatchMe)
 		r.Post("/users/me/avatar", profileHandler.UploadAvatar)
 		r.Delete("/users/me/avatar", profileHandler.DeleteAvatar)
+		r.Post("/users/me/technique-viewed", profileHandler.IncrementTechniquesStudied)
+		r.Patch("/users/me/belt", profileHandler.UpdateBeltLevel)
 	})
 
 	r.Post("/billing/webhook", billingHandler.HandleWebhook)
