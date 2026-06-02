@@ -15,7 +15,18 @@ var (
 	ErrUsernameTaken      = errors.New("username already taken")
 	ErrAvatarTooLarge     = errors.New("avatar file too large")
 	ErrAvatarInvalidType  = errors.New("invalid avatar file type")
+	ErrInvalidBeltLevel   = errors.New("invalid belt level")
 )
+
+var validBeltLevels = map[string]struct{}{
+	"white":  {},
+	"yellow": {},
+	"orange": {},
+	"green":  {},
+	"blue":   {},
+	"brown":  {},
+	"black":  {},
+}
 
 var usernamePattern = regexp.MustCompile(`^[a-zA-Z0-9_]{3,30}$`)
 
@@ -24,6 +35,8 @@ type ProfileUserRepository interface {
 	GetUserByID(id string) (*model.User, error)
 	UpdateUsername(userID, username string) (*model.User, error)
 	UpdateProfile(userID string, username, avatarURL *string) (*model.User, error)
+	IncrementTechniquesStudied(userID string) error
+	UpdateBeltLevel(userID, beltLevel string) error
 }
 
 // AvatarStorage uploads and deletes user avatar files.
@@ -126,4 +139,21 @@ func (s *ProfileService) DeleteAvatar(userID string) (*model.User, error) {
 
 	empty := ""
 	return s.repo.UpdateProfile(userID, nil, &empty)
+}
+
+// IncrementTechniquesStudied increments the techniques viewed counter for the user.
+func (s *ProfileService) IncrementTechniquesStudied(userID string) error {
+	return s.repo.IncrementTechniquesStudied(userID)
+}
+
+// UpdateBeltLevel sets the user's belt level after validation.
+func (s *ProfileService) UpdateBeltLevel(userID, beltLevel string) (*model.User, error) {
+	normalized := strings.ToLower(strings.TrimSpace(beltLevel))
+	if _, ok := validBeltLevels[normalized]; !ok {
+		return nil, ErrInvalidBeltLevel
+	}
+	if err := s.repo.UpdateBeltLevel(userID, normalized); err != nil {
+		return nil, err
+	}
+	return s.GetMe(userID)
 }

@@ -4,6 +4,9 @@ import { getAuthToken } from '@/lib/auth';
 function profileRouteMessage(status: number, path: string): string | null {
   if (!path.includes('/users/me')) return null;
   if (status === 404) {
+    if (path.includes('/belt')) {
+      return 'Route ceinture absente — redéploie le backend (PATCH /users/me/belt).';
+    }
     return 'API Render pas à jour — redéploie le backend (routes profil manquantes).';
   }
   if (status === 401) return 'Session expirée — reconnecte-toi.';
@@ -98,6 +101,20 @@ export async function apiFetchAuth<T>(
     return parseResponse<T>(res, path);
   } catch (err) {
     throw wrapFetchError(err);
+  }
+}
+
+export async function trackTechniqueView(token: string): Promise<void> {
+  try {
+    await fetch(`${API_URL}/users/me/technique-viewed`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch {
+    // fire and forget
   }
 }
 

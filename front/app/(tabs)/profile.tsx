@@ -1,16 +1,22 @@
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,23 +26,67 @@ import { apiFetchAuth, formatAvatarUploadError, uploadAvatar } from "@/lib/api";
 import { normalizeUsernameInput, validateUsername } from "@/lib/username";
 import {
   avatarInitial,
+  displayUsername,
   emailUsernameFallback,
   useAuthStore,
   type User,
 } from "@/store/authStore";
 
+const BELTS = [
+  { value: "white", emoji: "⚪", label: "White" },
+  { value: "yellow", emoji: "🟡", label: "Yellow" },
+  { value: "orange", emoji: "🟠", label: "Orange" },
+  { value: "green", emoji: "🟢", label: "Green" },
+  { value: "blue", emoji: "🔵", label: "Blue" },
+  { value: "brown", emoji: "🟤", label: "Brown" },
+  { value: "black", emoji: "⚫", label: "Black" },
+] as const;
+
+function beltEntry(belt: string) {
+  const normalized = belt?.toLowerCase() ?? "white";
+  return BELTS.find((b) => b.value === normalized) ?? BELTS[0];
+}
+
+function memberYear(createdAt: string): string {
+  const year = new Date(createdAt).getFullYear();
+  return Number.isNaN(year) ? "—" : String(year);
+}
+
+type SettingsRowProps = {
+  label: string;
+  onPress: () => void;
+  labelColor?: string;
+};
+
+function SettingsRow({ label, onPress, labelColor }: SettingsRowProps) {
+  return (
+    <Pressable style={styles.row} onPress={onPress}>
+      <Text style={[styles.rowLabel, labelColor ? { color: labelColor } : null]}>
+        {label}
+      </Text>
+      <Ionicons name="chevron-forward" size={16} color="#84714F" />
+    </Pressable>
+  );
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, updateProfile, refreshUser, setUser } = useAuthStore();
+  const { user, logout, updateProfile, updateBeltLevel, refreshUser, setUser } =
+    useAuthStore();
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [beltModalVisible, setBeltModalVisible] = useState(false);
   const [username, setUsername] = useState("");
+  const [selectedBelt, setSelectedBelt] = useState("white");
   const [saving, setSaving] = useState(false);
+  const [beltSaving, setBeltSaving] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
       setUsername(user.username ?? emailUsernameFallback(user.email));
+      setSelectedBelt(user.belt_level || "white");
     }
-  }, [user?.id, user?.username, user?.email]);
+  }, [user?.id, user?.username, user?.email, user?.belt_level]);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,11 +101,11 @@ export default function ProfileScreen() {
     router.replace("/auth/login");
   };
 
-  const handleUsernameBlur = () => {
-    const normalized = normalizeUsernameInput(username);
-    if (normalized !== username.trim()) {
-      setUsername(normalized);
+  const openEditModal = () => {
+    if (user) {
+      setUsername(user.username ?? emailUsernameFallback(user.email));
     }
+    setEditModalVisible(true);
   };
 
   const handleSaveUsername = async () => {
@@ -68,13 +118,35 @@ export default function ProfileScreen() {
     setSaving(true);
     try {
       await updateProfile(normalized);
-      setUsername(normalized);
-      Alert.alert("Profil", "Username enregistré.");
+      setEditModalVisible(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur";
       Alert.alert("Profil", message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openBeltModal = () => {
+    setSelectedBelt(user?.belt_level ?? "white");
+    setBeltModalVisible(true);
+  };
+
+  const handleConfirmBelt = async () => {
+    setBeltSaving(true);
+    try {
+      await updateBeltLevel(selectedBelt);
+      setBeltModalVisible(false);
+      Alert.alert("Belt Level", "Ceinture mise à jour.");
+    } catch (err) {
+      setBeltModalVisible(false);
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      Alert.alert(
+        "Belt Level",
+        `Impossible d'enregistrer la ceinture : ${message}`,
+      );
+    } finally {
+      setBeltSaving(false);
     }
   };
 
@@ -116,107 +188,47 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleDeleteAvatar = async () => {
-    setAvatarLoading(true);
-    try {
-      const data = await apiFetchAuth<{ user: typeof user }>(
-        "/users/me/avatar",
-        {
-          method: "DELETE",
-        },
-      );
-      if (data.user) setUser(data.user);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erreur";
-      Alert.alert("Photo", formatAvatarUploadError(message));
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
-
   const showAvatarOptions = () => {
-    const hasAvatar = Boolean(user?.avatar_url);
-    const options = hasAvatar
-      ? ["Ajouter une nouvelle photo", "Supprimer la photo", "Annuler"]
-      : ["Ajouter une nouvelle photo", "Annuler"];
-    const cancelIndex = options.length - 1;
-    const destructiveIndex = hasAvatar ? 1 : undefined;
-
-    const onSelect = (index: number) => {
-      if (index === cancelIndex) return;
-      if (hasAvatar && index === 1) {
-        Alert.alert("Supprimer la photo", "Confirmer la suppression ?", [
-          { text: "Annuler", style: "cancel" },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: handleDeleteAvatar,
-          },
-        ]);
-        return;
-      }
-      if (index === 0) {
-        if (Platform.OS === "ios") {
-          ActionSheetIOS.showActionSheetWithOptions(
-            {
-              options: ["Bibliothèque", "Appareil photo", "Annuler"],
-              cancelButtonIndex: 2,
-            },
-            (i) => {
-              if (i === 0) pickImage(false);
-              if (i === 1) pickImage(true);
-            },
-          );
-        } else {
-          Alert.alert("Photo", "Choisir une source", [
-            { text: "Bibliothèque", onPress: () => pickImage(false) },
-            { text: "Appareil photo", onPress: () => pickImage(true) },
-            { text: "Annuler", style: "cancel" },
-          ]);
-        }
-      }
-    };
-
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options,
-          cancelButtonIndex: cancelIndex,
-          destructiveButtonIndex: destructiveIndex,
+          options: ["Bibliothèque", "Appareil photo", "Annuler"],
+          cancelButtonIndex: 2,
         },
-        onSelect,
+        (i) => {
+          if (i === 0) pickImage(false);
+          if (i === 1) pickImage(true);
+        },
       );
     } else {
-      const buttons = options.slice(0, -1).map((label, index) => ({
-        text: label,
-        style: (hasAvatar && index === 1 ? "destructive" : "default") as
-          | "default"
-          | "destructive"
-          | "cancel",
-        onPress: () => onSelect(index),
-      }));
-      Alert.alert("Photo de profil", undefined, [
-        ...buttons,
+      Alert.alert("Photo", "Choisir une source", [
+        { text: "Bibliothèque", onPress: () => pickImage(false) },
+        { text: "Appareil photo", onPress: () => pickImage(true) },
         { text: "Annuler", style: "cancel" },
       ]);
     }
   };
 
   const initial = avatarInitial(user);
+  const isPremium = user?.subscription_status === "active";
+  const belt = user?.belt_level ?? "white";
+  const studied = user?.techniques_studied ?? 0;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.headerTitle}>My Profile</Text>
+
         <Pressable
           style={styles.avatarPressable}
           onPress={showAvatarOptions}
           disabled={avatarLoading}
         >
           {user?.avatar_url ? (
-            <Image
-              source={{ uri: user.avatar_url }}
-              style={styles.avatarImage}
-            />
+            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initial}</Text>
@@ -229,39 +241,178 @@ export default function ProfileScreen() {
           )}
         </Pressable>
 
-        <Text style={styles.avatarHint}>Touch to change the avatar</Text>
+        <Text style={styles.username}>{displayUsername(user)}</Text>
         <Text style={styles.email}>{user?.email ?? ""}</Text>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Username</Text>
-          <TextInput
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-            onBlur={handleUsernameBlur}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.fieldHint}>
-            Letters, numbers and underscore — no space
-          </Text>
-          <Pressable
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-            onPress={handleSaveUsername}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save</Text>
-            )}
-          </Pressable>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>{beltEntry(belt).emoji}</Text>
+            <Text style={styles.statValue}>{beltEntry(belt).label}</Text>
+            <Text style={styles.statLabel}>Belt level</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>📅</Text>
+            <Text style={styles.statValue}>
+              {user?.created_at ? memberYear(user.created_at) : "—"}
+            </Text>
+            <Text style={styles.statLabel}>Member since</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>📖</Text>
+            <Text style={styles.statValue}>{studied}</Text>
+            <Text style={styles.statLabel}>Studied</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statEmoji}>{isPremium ? "⭐" : "🔓"}</Text>
+            <Text
+              style={[
+                styles.statValue,
+                { color: isPremium ? "#2D6A4F" : "#84714F" },
+              ]}
+            >
+              {isPremium ? "Premium" : "Free"}
+            </Text>
+            <Text style={styles.statLabel}>Plan</Text>
+          </View>
         </View>
 
-        <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign out</Text>
-        </Pressable>
-      </View>
+        <Text style={styles.sectionLabel}>Settings</Text>
+        <SettingsRow label="Edit Profile" onPress={openEditModal} />
+        <SettingsRow label="Belt Level" onPress={openBeltModal} />
+
+        <Text style={styles.sectionLabel}>Account</Text>
+        <SettingsRow
+          label="Privacy Policy"
+          onPress={() => Alert.alert("Privacy Policy", "Coming soon")}
+        />
+        <SettingsRow
+          label="Sign out"
+          onPress={handleSignOut}
+          labelColor="#BF1A2F"
+        />
+      </ScrollView>
+
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalBackdrop}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalCard}>
+                  <Text style={styles.modalTitle}>Edit Profile</Text>
+                  <Text style={styles.modalFieldLabel}>Username</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={Keyboard.dismiss}
+                  />
+                  <View style={styles.modalActions}>
+                    <Pressable
+                      style={styles.modalCancel}
+                      onPress={() => setEditModalVisible(false)}
+                    >
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[
+                        styles.modalConfirm,
+                        saving && styles.buttonDisabled,
+                      ]}
+                      onPress={handleSaveUsername}
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <ActivityIndicator color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.modalConfirmText}>Save</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal
+        visible={beltModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setBeltModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Belt Level</Text>
+            <ScrollView
+              style={styles.beltList}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {BELTS.map((b) => {
+                const isSelected = selectedBelt === b.value;
+                return (
+                  <Pressable
+                    key={b.value}
+                    style={[
+                      styles.beltOption,
+                      isSelected && styles.beltOptionSelected,
+                    ]}
+                    onPress={() => setSelectedBelt(b.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.beltOptionLabel,
+                        isSelected && styles.beltOptionLabelSelected,
+                      ]}
+                    >
+                      {`${b.emoji} ${b.label}`}
+                    </Text>
+                    {isSelected ? (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color="#BF1A2F"
+                      />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <Pressable
+                style={styles.modalCancel}
+                onPress={() => setBeltModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalConfirm, beltSaving && styles.buttonDisabled]}
+                onPress={handleConfirmBelt}
+                disabled={beltSaving}
+              >
+                {beltSaving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Confirm</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -272,106 +423,207 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     paddingBottom: 80,
   },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingTop: 40,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 32,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#34344A",
+    textAlign: "center",
+    marginBottom: 24,
   },
   avatarPressable: {
-    width: 80,
-    height: 80,
-    marginBottom: 8,
+    width: 90,
+    height: 90,
+    alignSelf: "center",
+    marginBottom: 12,
     position: "relative",
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: "#34344A",
     alignItems: "center",
     justifyContent: "center",
   },
   avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 40,
+    borderRadius: 45,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "700",
     color: "#FFFFFF",
   },
-  avatarHint: {
+  username: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#34344A",
+    textAlign: "center",
+  },
+  email: {
+    fontSize: 13,
+    color: "#84714F",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 24,
+  },
+  statCard: {
+    width: "47%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statEmoji: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#34344A",
+    marginBottom: 4,
+  },
+  statLabel: {
     fontSize: 12,
+    color: "#84714F",
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#84714F",
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  row: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  rowLabel: {
+    fontSize: 16,
+    color: "#34344A",
+    fontWeight: "500",
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#34344A",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  modalFieldLabel: {
+    fontSize: 13,
     color: "#84714F",
     marginBottom: 8,
   },
-  email: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#34344A",
-    marginBottom: 32,
-  },
-  field: {
-    width: "100%",
-    marginBottom: 32,
-  },
-  label: {
-    fontSize: 13,
-    color: "#84714F",
-    marginBottom: 4,
-  },
-  fieldHint: {
-    fontSize: 12,
-    color: "#84714F",
-    marginTop: 6,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8E0D0",
+  modalInput: {
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 14,
-    color: "#34344A",
     fontSize: 16,
+    color: "#34344A",
+    marginBottom: 20,
   },
-  saveButton: {
-    backgroundColor: "#BF1A2F",
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 8,
+  beltList: {
+    maxHeight: 280,
+    marginBottom: 16,
+  },
+  beltOption: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
-  saveButtonDisabled: {
-    opacity: 0.7,
+  beltOptionSelected: {
+    borderColor: "#BF1A2F",
+    backgroundColor: "#FFF8F9",
   },
-  saveButtonText: {
+  beltOptionLabel: {
+    fontSize: 16,
+    color: "#34344A",
+    fontWeight: "500",
+  },
+  beltOptionLabelSelected: {
+    fontWeight: "700",
+    color: "#BF1A2F",
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalCancel: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  modalCancelText: {
+    color: "#84714F",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  modalConfirm: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: "#BF1A2F",
+  },
+  modalConfirmText: {
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 16,
   },
-  signOutButton: {
-    width: "100%",
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#BF1A2F",
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
-    marginTop: "auto",
-    marginBottom: 24,
-  },
-  signOutText: {
-    color: "#BF1A2F",
-    fontWeight: "700",
-    fontSize: 16,
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

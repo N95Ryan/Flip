@@ -11,5 +11,7 @@ type User struct {
 	PasswordHash       string    `json:"-"`
 	StripeCustomerID   string    `json:"stripe_customer_id,omitempty"`
 	SubscriptionStatus string    `json:"subscription_status"`
+	BeltLevel          string    `json:"belt_level"`
+	TechniquesStudied  int       `json:"techniques_studied"`
 	CreatedAt          time.Time `json:"created_at"`
 }
