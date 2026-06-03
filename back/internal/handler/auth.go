@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/N95Ryan/flip-back/internal/service"
@@ -43,7 +44,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "email and password (min 8 characters) are required"})
 		case errors.Is(err, service.ErrEmailExists):
 			writeJSON(w, http.StatusConflict, map[string]string{"error": "email already registered"})
+		case errors.Is(err, service.ErrSchemaOutdated):
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "database needs migration — redeploy backend or run migrations on Neon"})
 		default:
+			log.Printf("register failed for %q: %v", req.Email, err)
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not register user"})
 		}
 		return
@@ -67,7 +71,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "email and password are required"})
 		case errors.Is(err, service.ErrInvalidCredentials):
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
+		case errors.Is(err, service.ErrSchemaOutdated):
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "database needs migration — redeploy backend or run migrations on Neon"})
 		default:
+			log.Printf("login failed for %q: %v", req.Email, err)
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not log in"})
 		}
 		return
