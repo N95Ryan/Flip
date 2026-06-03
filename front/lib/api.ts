@@ -3,11 +3,14 @@ import { getAuthToken } from '@/lib/auth';
 
 function authRouteMessage(status: number, path: string, apiError?: string): string | null {
   if (!path.includes('/auth/')) return null;
+  if (status === 409) {
+    return 'This email is already registered. Try signing in instead.';
+  }
   if (status === 503 && apiError?.includes('migration')) {
     return apiError;
   }
   if (status === 500 && apiError === 'could not log in') {
-    return 'Schéma Neon incomplet — exécute back/migrations/fix_login_neon.sql dans l’éditeur SQL Neon (même base que Render), puis réessaie.';
+    return 'Incomplete Neon schema — run back/migrations/fix_login_neon.sql in the Neon SQL editor (same DB as Render), then retry.';
   }
   return null;
 }
@@ -16,11 +19,11 @@ function profileRouteMessage(status: number, path: string): string | null {
   if (!path.includes('/users/me')) return null;
   if (status === 404) {
     if (path.includes('/belt')) {
-      return 'Route ceinture absente — redéploie le backend (PATCH /users/me/belt).';
+      return 'Belt route missing — redeploy the backend (PATCH /users/me/belt).';
     }
-    return 'API Render pas à jour — redéploie le backend (routes profil manquantes).';
+    return 'Render API outdated — redeploy the backend (profile routes missing).';
   }
-  if (status === 401) return 'Session expirée — reconnecte-toi.';
+  if (status === 401) return 'Session expired — please sign in again.';
   return null;
 }
 
@@ -34,7 +37,7 @@ async function parseResponse<T>(res: Response, path = ''): Promise<T> {
     } catch {
       const profileMsg = profileRouteMessage(res.status, path);
       if (profileMsg) throw new Error(profileMsg);
-      throw new Error(`Réponse invalide du serveur (${res.status})`);
+      throw new Error(`Invalid server response (${res.status})`);
     }
   }
 
@@ -42,7 +45,7 @@ async function parseResponse<T>(res: Response, path = ''): Promise<T> {
     const authMsg = authRouteMessage(res.status, path, data.error);
     const profileMsg = profileRouteMessage(res.status, path);
     const base =
-      authMsg ?? profileMsg ?? data.error ?? `Erreur serveur (${res.status})`;
+      authMsg ?? profileMsg ?? data.error ?? `Server error (${res.status})`;
     if (__DEV__ && data.error && !base.includes(`(${res.status})`)) {
       throw new Error(`${data.error} (${res.status})`);
     }
@@ -56,20 +59,20 @@ function wrapFetchError(err: unknown): Error {
   if (err instanceof Error) {
     if (err.message === 'Failed to fetch' || err.message.includes('Network request failed')) {
       return new Error(
-        `Impossible de joindre l'API (${API_URL}). Vérifie que le backend tourne et EXPO_PUBLIC_API_URL.`
+        `Cannot reach the API (${API_URL}). Check that the backend is running and EXPO_PUBLIC_API_URL is set.`
       );
     }
     return err;
   }
-  return new Error('Erreur réseau');
+  return new Error('Network error');
 }
 
 export function formatAvatarUploadError(message: string): string {
   if (
     message.includes('could not update profile') ||
-    message.includes('Erreur serveur (500)')
+    message.includes('Server error (500)')
   ) {
-    return `${message}\n\nSur Render, configure S3_BUCKET et les variables S3/R2 (voir back/.env.example).`;
+    return `${message}\n\nOn Render, configure S3_BUCKET and S3/R2 variables (see back/.env.example).`;
   }
   return message;
 }
@@ -97,7 +100,7 @@ export async function apiFetchAuth<T>(
   options?: RequestInit
 ): Promise<T> {
   const token = await getAuthToken();
-  if (!token) throw new Error('Non connecté — reconnecte-toi');
+  if (!token) throw new Error('Not signed in — please sign in again');
 
   const isFormData = options?.body instanceof FormData;
   const headers: Record<string, string> = {
@@ -133,20 +136,33 @@ export async function trackTechniqueView(token: string): Promise<void> {
   }
 }
 
+export async function createCheckout(): Promise<{ url: string }> {
+  return apiFetchAuth<{ url: string }>('/billing/checkout', { method: 'POST' });
+}
+
 export async function uploadAvatar<T = unknown>(
   uri: string,
   mimeType: string
 ): Promise<T> {
   const token = await getAuthToken();
-  if (!token) throw new Error('Non connecté — reconnecte-toi');
+  if (!token) throw new Error('Not signed in — please sign in again');
 
   const path = '/users/me/avatar';
-  const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+  const normalizedMime =
+    mimeType.includes('heic') || mimeType.includes('heif')
+      ? 'image/jpeg'
+      : mimeType;
+  const ext =
+    normalizedMime === 'image/png'
+      ? 'png'
+      : normalizedMime === 'image/webp'
+        ? 'webp'
+        : 'jpg';
   const formData = new FormData();
   formData.append('file', {
     uri,
     name: `avatar.${ext}`,
-    type: mimeType,
+    type: normalizedMime,
   } as unknown as Blob);
 
   try {
