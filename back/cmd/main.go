@@ -121,6 +121,7 @@ func main() {
 		log.Printf("WARNING: database ping failed: %v", err)
 	} else {
 		flipdb.ApplyMigrations(db, "migrations",
+			"002_journal_entries.sql",
 			"003_user_profile.sql",
 			"004_belt_techniques.sql",
 		)

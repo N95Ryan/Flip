@@ -1,7 +1,10 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DailyTipCard } from '@/components/DailyTipCard';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Colors } from '@/constants/colors';
 import { LibraryRoutes } from '@/constants/libraryRoutes';
 import { displayUsername, useAuthStore } from '@/store/authStore';
@@ -47,7 +50,13 @@ const LIBRARY_CARDS: LibraryCard[] = [
 
 export default function LibraryScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser().catch(() => {});
+    }, [refreshUser]),
+  );
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -58,11 +67,17 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.welcomeBack}>Welcome back,</Text>
-        <Text style={styles.welcomeName}>
-          {displayUsername(user)} 👋
-        </Text>
-        <Text style={styles.date}>{today}</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text style={styles.welcomeBack}>Welcome back,</Text>
+            <Text style={styles.welcomeName}>
+              {displayUsername(user)} 👋
+            </Text>
+            <Text style={styles.date}>{today}</Text>
+          </View>
+          <UserAvatar size={44} />
+        </View>
+        <DailyTipCard />
         <View style={styles.separator} />
       </View>
 
@@ -102,6 +117,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 12,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
   },
   welcomeBack: {
     fontSize: 14,

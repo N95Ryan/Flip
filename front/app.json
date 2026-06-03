@@ -23,12 +23,20 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F7F2E9",
+          "image": "./assets/images/Flip-logo.png"
+        }
+      ],
+      [
         "expo-image-picker",
         {
-          "photosPermission": "Flip a besoin d'accéder à vos photos pour votre avatar.",
-          "cameraPermission": "Flip a besoin d'accéder à la caméra pour votre avatar."
+          "photosPermission": "Flip needs access to your photos for your profile picture.",
+          "cameraPermission": "Flip needs access to your camera for your profile picture."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
