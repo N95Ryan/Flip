@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { apiFetch, apiFetchAuth } from '@/lib/api';
-import { removeToken, saveToken } from '@/lib/auth';
+import { getToken, removeToken, saveToken } from '@/lib/auth';
 
 export type User = {
   id: string;
@@ -24,14 +24,18 @@ type ProfileResponse = {
   user: User;
 };
 
+export type SessionStatus = 'authenticated' | 'unauthenticated';
+
 type AuthState = {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isBootstrapping: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  restoreSession: () => Promise<SessionStatus>;
   refreshUser: () => Promise<void>;
   updateProfile: (username: string) => Promise<void>;
   updateBeltLevel: (belt: string) => Promise<void>;
@@ -42,6 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isLoading: false,
+  isBootstrapping: true,
   error: null,
 
   setUser: (user) => set({ user }),
@@ -87,6 +92,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await removeToken();
     set({ user: null, token: null, error: null });
+  },
+
+  restoreSession: async () => {
+    set({ isBootstrapping: true });
+    try {
+      const token = await getToken();
+      if (!token) {
+        set({ user: null, token: null });
+        return 'unauthenticated';
+      }
+
+      try {
+        const data = await apiFetchAuth<ProfileResponse>('/users/me');
+        set({ user: data.user, token });
+        return 'authenticated';
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '';
+        const isExpired =
+          message.includes('Session expired') ||
+          message.includes('401') ||
+          message.toLowerCase().includes('unauthorized');
+
+        if (isExpired) {
+          await removeToken();
+          set({ user: null, token: null });
+        } else {
+          set({ user: null, token });
+        }
+        return 'unauthenticated';
+      }
+    } finally {
+      set({ isBootstrapping: false });
+    }
   },
 
   refreshUser: async () => {

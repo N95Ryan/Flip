@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -22,10 +21,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Colors } from "@/constants/colors";
-import { apiFetchAuth, formatAvatarUploadError, uploadAvatar } from "@/lib/api";
+import { formatAvatarUploadError, uploadAvatar } from "@/lib/api";
 import { normalizeUsernameInput, validateUsername } from "@/lib/username";
+import { UserAvatar } from "@/components/UserAvatar";
 import {
-  avatarInitial,
   displayUsername,
   emailUsernameFallback,
   useAuthStore,
@@ -80,6 +79,14 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [beltSaving, setBeltSaving] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarCacheKey, setAvatarCacheKey] = useState<number | undefined>();
+
+  const pickerOptions: ImagePicker.ImagePickerOptions = {
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.8,
+  };
 
   useEffect(() => {
     if (user) {
@@ -90,9 +97,7 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      refreshUser().catch(() => {
-        // pas de session valide
-      });
+      refreshUser().catch(() => {});
     }, [refreshUser]),
   );
 
@@ -120,8 +125,8 @@ export default function ProfileScreen() {
       await updateProfile(normalized);
       setEditModalVisible(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erreur";
-      Alert.alert("Profil", message);
+      const message = err instanceof Error ? err.message : "Error";
+      Alert.alert("Profile", message);
     } finally {
       setSaving(false);
     }
@@ -137,13 +142,13 @@ export default function ProfileScreen() {
     try {
       await updateBeltLevel(selectedBelt);
       setBeltModalVisible(false);
-      Alert.alert("Belt Level", "Ceinture mise à jour.");
+      Alert.alert("Belt Level", "Belt level updated.");
     } catch (err) {
       setBeltModalVisible(false);
-      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      const message = err instanceof Error ? err.message : "Unknown error";
       Alert.alert(
         "Belt Level",
-        `Impossible d'enregistrer la ceinture : ${message}`,
+        `Could not save belt level: ${message}`,
       );
     } finally {
       setBeltSaving(false);
@@ -155,21 +160,13 @@ export default function ProfileScreen() {
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission", "Accès refusé.");
+      Alert.alert("Permission", "Access denied.");
       return;
     }
 
     const result = useCamera
-      ? await ImagePicker.launchCameraAsync({
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.8,
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.8,
-        });
+      ? await ImagePicker.launchCameraAsync(pickerOptions)
+      : await ImagePicker.launchImageLibraryAsync(pickerOptions);
 
     if (result.canceled || !result.assets[0]) return;
 
@@ -180,8 +177,9 @@ export default function ProfileScreen() {
     try {
       const data = await uploadAvatar<{ user: User }>(asset.uri, mimeType);
       setUser(data.user);
+      setAvatarCacheKey(Date.now());
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erreur";
+      const message = err instanceof Error ? err.message : "Error";
       Alert.alert("Photo", formatAvatarUploadError(message));
     } finally {
       setAvatarLoading(false);
@@ -192,7 +190,7 @@ export default function ProfileScreen() {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["Bibliothèque", "Appareil photo", "Annuler"],
+          options: ["Photo Library", "Camera", "Cancel"],
           cancelButtonIndex: 2,
         },
         (i) => {
@@ -201,15 +199,14 @@ export default function ProfileScreen() {
         },
       );
     } else {
-      Alert.alert("Photo", "Choisir une source", [
-        { text: "Bibliothèque", onPress: () => pickImage(false) },
-        { text: "Appareil photo", onPress: () => pickImage(true) },
-        { text: "Annuler", style: "cancel" },
+      Alert.alert("Photo", "Choose a source", [
+        { text: "Photo Library", onPress: () => pickImage(false) },
+        { text: "Camera", onPress: () => pickImage(true) },
+        { text: "Cancel", style: "cancel" },
       ]);
     }
   };
 
-  const initial = avatarInitial(user);
   const isPremium = user?.subscription_status === "active";
   const belt = user?.belt_level ?? "white";
   const studied = user?.techniques_studied ?? 0;
@@ -227,18 +224,7 @@ export default function ProfileScreen() {
           onPress={showAvatarOptions}
           disabled={avatarLoading}
         >
-          {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
-          )}
-          {avatarLoading && (
-            <View style={styles.avatarOverlay}>
-              <ActivityIndicator color="#FFFFFF" />
-            </View>
-          )}
+          <UserAvatar size={90} cacheKey={avatarCacheKey} loading={avatarLoading} />
         </Pressable>
 
         <Text style={styles.username}>{displayUsername(user)}</Text>

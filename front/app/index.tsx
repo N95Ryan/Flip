@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { Animated, Platform, StyleSheet, View } from 'react-native';
@@ -26,12 +25,6 @@ export default function SplashScreen() {
         useNativeDriver,
       }),
     ]).start();
-
-    const timer = setTimeout(() => {
-      router.replace('/auth/login');
-    }, 2000);
-
-    return () => clearTimeout(timer);
   }, [scale, opacity]);
 
   return (
