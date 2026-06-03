@@ -1,6 +1,6 @@
 'use client';
 
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import {
@@ -17,9 +17,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthInput } from '@/components/auth/AuthInput';
+import { isOnboardingDone } from '@/lib/onboarding';
 import { useAuthStore } from '@/store/authStore';
 
 const LOGO = require('@/assets/images/Flip-logo.png');
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -43,6 +46,10 @@ export default function RegisterScreen() {
       setLocalError('Email is required');
       return;
     }
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setLocalError('Please enter a valid email address');
+      return;
+    }
     if (password.length < 8) {
       setLocalError('Password must be at least 8 characters');
       return;
@@ -55,7 +62,8 @@ export default function RegisterScreen() {
     setLocalError(null);
     try {
       await register(trimmedEmail, password);
-      router.replace('/(tabs)/library');
+      const done = await isOnboardingDone();
+      router.replace((done ? '/(tabs)/library' : '/onboarding') as Href);
     } catch {
       // error is set in the store
     }
