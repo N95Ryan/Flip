@@ -8,6 +8,7 @@ import (
 	"github.com/N95Ryan/flip-back/internal/model"
 	"github.com/N95Ryan/flip-back/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,7 +17,19 @@ var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrInvalidInput       = errors.New("invalid email or password")
 	ErrEmailExists        = errors.New("email already registered")
+	ErrSchemaOutdated     = errors.New("database schema outdated")
 )
+
+func mapDBError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "42703" {
+		return ErrSchemaOutdated
+	}
+	return err
+}
 
 // AuthUserRepository defines the user persistence operations required by AuthService.
 type AuthUserRepository interface {
@@ -53,7 +66,7 @@ func (s *AuthService) Register(email, password string) (*model.User, string, err
 		if errors.Is(err, repository.ErrEmailExists) {
 			return nil, "", ErrEmailExists
 		}
-		return nil, "", err
+		return nil, "", mapDBError(err)
 	}
 
 	if s.stripeSvc != nil {
@@ -80,7 +93,7 @@ func (s *AuthService) Login(email, password string) (*model.User, string, error)
 
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return nil, "", err
+		return nil, "", mapDBError(err)
 	}
 	if user == nil {
 		return nil, "", ErrInvalidCredentials

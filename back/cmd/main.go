@@ -19,6 +19,8 @@ import (
 
 	"github.com/N95Ryan/flip-back/data"
 
+	flipdb "github.com/N95Ryan/flip-back/internal/db"
+
 	"github.com/N95Ryan/flip-back/internal/handler"
 
 	authmiddleware "github.com/N95Ryan/flip-back/internal/middleware"
@@ -117,6 +119,11 @@ func main() {
 
 	if err := db.Ping(); err != nil {
 		log.Printf("WARNING: database ping failed: %v", err)
+	} else {
+		flipdb.ApplyMigrations(db, "migrations",
+			"003_user_profile.sql",
+			"004_belt_techniques.sql",
+		)
 	}
 
 	techniqueRepo := repository.NewTechniqueRepository(data.Techniques)
