@@ -1,6 +1,17 @@
 import { API_URL } from '@/constants/api';
 import { getAuthToken } from '@/lib/auth';
 
+function authRouteMessage(status: number, path: string, apiError?: string): string | null {
+  if (!path.includes('/auth/')) return null;
+  if (status === 503 && apiError?.includes('migration')) {
+    return apiError;
+  }
+  if (status === 500 && apiError === 'could not log in') {
+    return 'Schéma Neon incomplet — exécute back/migrations/fix_login_neon.sql dans l’éditeur SQL Neon (même base que Render), puis réessaie.';
+  }
+  return null;
+}
+
 function profileRouteMessage(status: number, path: string): string | null {
   if (!path.includes('/users/me')) return null;
   if (status === 404) {
@@ -28,10 +39,14 @@ async function parseResponse<T>(res: Response, path = ''): Promise<T> {
   }
 
   if (!res.ok) {
+    const authMsg = authRouteMessage(res.status, path, data.error);
     const profileMsg = profileRouteMessage(res.status, path);
-    throw new Error(
-      profileMsg ?? data.error ?? `Erreur serveur (${res.status})`
-    );
+    const base =
+      authMsg ?? profileMsg ?? data.error ?? `Erreur serveur (${res.status})`;
+    if (__DEV__ && data.error && !base.includes(`(${res.status})`)) {
+      throw new Error(`${data.error} (${res.status})`);
+    }
+    throw new Error(base);
   }
 
   return data as T;
