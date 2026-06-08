@@ -20,15 +20,13 @@ type UserRepository interface {
 // BillingService handles Stripe checkout and webhook processing.
 type BillingService struct {
 	userRepo      UserRepository
-	priceID       string
 	webhookSecret string
 }
 
 // NewBillingService constructs a billing service.
-func NewBillingService(userRepo UserRepository, priceID, webhookSecret string) *BillingService {
+func NewBillingService(userRepo UserRepository, webhookSecret string) *BillingService {
 	return &BillingService{
 		userRepo:      userRepo,
-		priceID:       priceID,
 		webhookSecret: webhookSecret,
 	}
 }
@@ -46,17 +44,27 @@ func (s *BillingService) CreateStripeCustomer(userID, email string) (string, err
 	return c.ID, nil
 }
 
-// CreateCheckoutSession creates a Stripe Checkout Session in subscription mode.
-func (s *BillingService) CreateCheckoutSession(userID, customerID, successURL, cancelURL string) (string, error) {
+const (
+	CheckoutModeSubscription = "subscription"
+	CheckoutModePayment      = "payment"
+)
+
+// CreateCheckoutSession creates a Stripe Checkout Session.
+func (s *BillingService) CreateCheckoutSession(userID, customerID, priceID, successURL, cancelURL, mode string) (string, error) {
+	sessionMode := stripe.CheckoutSessionModeSubscription
+	if mode == CheckoutModePayment {
+		sessionMode = stripe.CheckoutSessionModePayment
+	}
+
 	params := &stripe.CheckoutSessionParams{
 		Customer:          stripe.String(customerID),
 		ClientReferenceID: stripe.String(userID),
-		Mode:              stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		Mode:              stripe.String(string(sessionMode)),
 		SuccessURL:        stripe.String(successURL),
 		CancelURL:         stripe.String(cancelURL),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
-				Price:    stripe.String(s.priceID),
+				Price:    stripe.String(priceID),
 				Quantity: stripe.Int64(1),
 			},
 		},
@@ -79,6 +87,8 @@ func (s *BillingService) HandleWebhook(payload []byte, sigHeader string) error {
 	}
 
 	switch event.Type {
+	case "checkout.session.completed":
+		return s.handleCheckoutCompleted(event)
 	case "customer.subscription.created":
 		return s.handleSubscriptionEvent(event, "active")
 	case "customer.subscription.updated":
@@ -95,6 +105,29 @@ func (s *BillingService) HandleWebhook(payload []byte, sigHeader string) error {
 		return s.handleSubscriptionEvent(event, "inactive")
 	}
 
+	return nil
+}
+
+func (s *BillingService) handleCheckoutCompleted(event stripe.Event) error {
+	var sess stripe.CheckoutSession
+	if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
+		return fmt.Errorf("unmarshal checkout session: %w", err)
+	}
+	if sess.Mode != stripe.CheckoutSessionModePayment || sess.PaymentStatus != stripe.CheckoutSessionPaymentStatusPaid {
+		return nil
+	}
+
+	customerID := ""
+	if sess.Customer != nil {
+		customerID = sess.Customer.ID
+	}
+	if customerID == "" {
+		return fmt.Errorf("checkout session missing customer id")
+	}
+
+	if err := s.userRepo.UpdateSubscriptionByCustomerID(customerID, "active"); err != nil {
+		return fmt.Errorf("update subscription status: %w", err)
+	}
 	return nil
 }
 
