@@ -17,7 +17,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/N95Ryan/flip-back/data"
+	"github.com/N95Ryan/flip-back/config"
 
 	flipdb "github.com/N95Ryan/flip-back/internal/db"
 
@@ -94,9 +94,9 @@ func main() {
 	}
 	stripe.Key = stripeKey
 
-	stripePriceID := os.Getenv("STRIPE_PRICE_ID")
-	if stripePriceID == "" {
-		log.Fatal("STRIPE_PRICE_ID is required")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	stripeWebhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
@@ -124,10 +124,11 @@ func main() {
 			"002_journal_entries.sql",
 			"003_user_profile.sql",
 			"004_belt_techniques.sql",
+			"005_techniques.sql",
 		)
 	}
 
-	techniqueRepo := repository.NewTechniqueRepository(data.Techniques)
+	techniqueRepo := repository.NewTechniqueRepository(db)
 
 	techniqueSvc := service.NewTechniqueService(techniqueRepo)
 
@@ -135,8 +136,13 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 
-	billingSvc := service.NewBillingService(userRepo, stripePriceID, stripeWebhookSecret)
-	billingHandler := handler.NewBillingHandler(billingSvc, userRepo)
+	billingSvc := service.NewBillingService(userRepo, stripeWebhookSecret)
+	planPrices := map[string]string{
+		"monthly":  cfg.StripePriceMonthly,
+		"yearly":   cfg.StripePriceYearly,
+		"lifetime": cfg.StripePriceLifetime,
+	}
+	billingHandler := handler.NewBillingHandler(billingSvc, userRepo, planPrices)
 
 	authSvc := service.NewAuthService(userRepo, jwtSecret, billingSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
