@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
+import { PaywallScreen } from '@/components/PaywallScreen';
 import { Colors } from '@/constants/colors';
-import { createCheckout } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
 const LOGO = require('@/assets/images/Flip-logo.png');
@@ -15,21 +24,7 @@ const FEATURES = [
 
 export function PremiumGate() {
   const refreshUser = useAuthStore((s) => s.refreshUser);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
-
-  const handleCheckout = async () => {
-    setCheckoutLoading(true);
-    try {
-      const { url } = await createCheckout();
-      await Linking.openURL(url);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Checkout failed';
-      Alert.alert('Premium', message);
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
 
   const handleRestore = async () => {
     setRestoreLoading(true);
@@ -53,7 +48,11 @@ export function PremiumGate() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       <Image source={LOGO} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Unlock your training journal</Text>
       <Text style={styles.subtitle}>
@@ -68,17 +67,7 @@ export function PremiumGate() {
         ))}
       </View>
 
-      <Pressable
-        style={[styles.primaryButton, checkoutLoading && styles.buttonDisabled]}
-        onPress={handleCheckout}
-        disabled={checkoutLoading}
-      >
-        {checkoutLoading ? (
-          <ActivityIndicator color={Colors.surface} />
-        ) : (
-          <Text style={styles.primaryButtonText}>Get Premium — 4.99 CAD/month</Text>
-        )}
-      </Pressable>
+      <PaywallScreen />
 
       <Pressable
         style={styles.secondaryButton}
@@ -91,16 +80,21 @@ export function PremiumGate() {
           <Text style={styles.secondaryButtonText}>Restore purchase</Text>
         )}
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 24,
     gap: 12,
   },
   logo: {
@@ -122,7 +116,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   features: {
-    alignSelf: 'stretch',
+    alignItems: 'center',
     gap: 8,
     marginVertical: 8,
   },
@@ -130,19 +124,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.textPrimary,
     lineHeight: 22,
-  },
-  primaryButton: {
-    alignSelf: 'stretch',
-    backgroundColor: Colors.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.surface,
+    textAlign: 'center',
   },
   secondaryButton: {
     alignSelf: 'stretch',
@@ -153,8 +135,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: Colors.accent,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
   },
 });

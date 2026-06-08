@@ -11,8 +11,8 @@ import (
 )
 
 func TestHandleWebhook_InvalidSignature(t *testing.T) {
-	billingSvc := service.NewBillingService(nil, "", "whsec_test_secret")
-	h := NewBillingHandler(billingSvc, nil)
+	billingSvc := service.NewBillingService(nil, "whsec_test_secret")
+	h := NewBillingHandler(billingSvc, nil, nil)
 
 	body := strings.NewReader(`{"type":"customer.subscription.created"}`)
 	req := httptest.NewRequest("POST", "/billing/webhook", body)
@@ -28,8 +28,8 @@ func TestHandleWebhook_InvalidSignature(t *testing.T) {
 
 func TestHandleWebhook_UnknownEvent(t *testing.T) {
 	secret := "whsec_test_secret"
-	billingSvc := service.NewBillingService(nil, "", secret)
-	h := NewBillingHandler(billingSvc, nil)
+	billingSvc := service.NewBillingService(nil, secret)
+	h := NewBillingHandler(billingSvc, nil, nil)
 
 	payload := []byte(`{"type":"charge.succeeded"}`)
 	signedPayload := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{
@@ -70,8 +70,8 @@ func (m *mockUserRepo) UpdateStripeCustomerID(userID, stripeCustomerID string) e
 func TestHandleWebhook_SubscriptionCreated(t *testing.T) {
 	secret := "whsec_test_secret"
 	repo := &mockUserRepo{}
-	billingSvc := service.NewBillingService(repo, "", secret)
-	h := NewBillingHandler(billingSvc, nil)
+	billingSvc := service.NewBillingService(repo, secret)
+	h := NewBillingHandler(billingSvc, nil, nil)
 
 	payload := []byte(`{
 		"type": "customer.subscription.created",
@@ -108,8 +108,8 @@ func TestHandleWebhook_SubscriptionCreated(t *testing.T) {
 func TestHandleWebhook_SubscriptionDeleted(t *testing.T) {
 	secret := "whsec_test_secret"
 	repo := &mockUserRepo{}
-	billingSvc := service.NewBillingService(repo, "", secret)
-	h := NewBillingHandler(billingSvc, nil)
+	billingSvc := service.NewBillingService(repo, secret)
+	h := NewBillingHandler(billingSvc, nil, nil)
 
 	payload := []byte(`{
 		"type": "customer.subscription.deleted",
