@@ -74,6 +74,7 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.container}>
       <FlatList
         ref={listRef}
+        style={styles.list}
         data={SLIDES}
         keyExtractor={(item) => item.key}
         horizontal
@@ -117,6 +118,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  list: {
+    flex: 1,
   },
   slide: {
     flex: 1,

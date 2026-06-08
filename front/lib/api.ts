@@ -136,8 +136,11 @@ export async function trackTechniqueView(token: string): Promise<void> {
   }
 }
 
-export async function createCheckout(): Promise<{ url: string }> {
-  return apiFetchAuth<{ url: string }>('/billing/checkout', { method: 'POST' });
+export async function createCheckout(priceId: string): Promise<{ url: string }> {
+  return apiFetchAuth<{ url: string }>('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ price_id: priceId }),
+  });
 }
 
 export async function uploadAvatar<T = unknown>(
