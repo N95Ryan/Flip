@@ -1,7 +1,9 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackButton } from '@/components/BackButton';
+import { LibraryContentCard } from '@/components/library/LibraryContentCard';
+import { LibraryScreenHeader } from '@/components/library/LibraryScreenHeader';
+import { Colors } from '@/constants/colors';
 
 type RuleItem = {
   title: string;
@@ -31,15 +33,12 @@ const ITEMS: RuleItem[] = [
   },
 ];
 
-const BORDER_COLOR = '#2563EB';
+const ACCENT_COLOR = '#34344A';
 
 export default function CombatsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <BackButton />
-        <Text style={styles.headerTitle}>Combats</Text>
-      </View>
+      <LibraryScreenHeader title="Combats" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -51,13 +50,12 @@ export default function CombatsScreen() {
         </Text>
 
         {ITEMS.map((item) => (
-          <View
+          <LibraryContentCard
             key={item.title}
-            style={[styles.card, { borderLeftColor: BORDER_COLOR }]}
-          >
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardDescription}>{item.description}</Text>
-          </View>
+            accentColor={ACCENT_COLOR}
+            title={item.title}
+            description={item.description}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -67,21 +65,7 @@ export default function CombatsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F2E9',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 12,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#34344A',
-    flex: 1,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -89,26 +73,8 @@ const styles = StyleSheet.create({
   },
   intro: {
     fontSize: 14,
-    color: '#84714F',
+    color: Colors.textMuted,
     marginBottom: 24,
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#34344A',
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: '#84714F',
-    marginTop: 6,
     lineHeight: 22,
   },
 });

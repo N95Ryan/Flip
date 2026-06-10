@@ -1,23 +1,56 @@
 import 'react-native-gesture-handler';
 
-import { Stack, router } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { Stack, router, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthLaunchScreen } from '@/components/AuthLaunchScreen';
 import { API_URL } from '@/constants/api';
 import { useSubscriptionRefresh } from '@/hooks/useSubscriptionRefresh';
+import { isOnboardingDone } from '@/lib/onboarding';
 import { useAuthStore, type SessionStatus } from '@/store/authStore';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+let sessionBootstrapped = false;
+
+type RouteKind = 'entry' | 'auth' | 'app' | 'onboarding' | 'other';
+
+function getCurrentPath(): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.pathname;
+  }
+  return '/';
+}
+
+function classifyPath(path: string): RouteKind {
+  const normalized = path.replace(/\/$/, '') || '/';
+
+  if (normalized === '/' || normalized === '/index') return 'entry';
+  if (normalized.startsWith('/auth')) return 'auth';
+  if (normalized.startsWith('/onboarding')) return 'onboarding';
+  if (
+    normalized.startsWith('/library') ||
+    normalized.startsWith('/journal') ||
+    normalized.startsWith('/profile')
+  ) {
+    return 'app';
+  }
+
+  return 'other';
+}
+
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'NotoSerifJP-Light': require('../assets/fonts/NotoSerifJP-Light.otf'),
+  });
+  const navigationState = useRootNavigationState();
   const restoreSession = useAuthStore((s) => s.restoreSession);
-  const bootstrapped = useRef(false);
   const [authStatus, setAuthStatus] = useState<SessionStatus | 'pending'>('pending');
   const [showLaunch, setShowLaunch] = useState(false);
 
@@ -30,23 +63,48 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (bootstrapped.current) return;
-    bootstrapped.current = true;
+    if (!fontsLoaded) return;
+    if (!navigationState?.key) return;
+    if (sessionBootstrapped) return;
+    sessionBootstrapped = true;
 
     (async () => {
       const status = await restoreSession();
       setAuthStatus(status);
+      const routeKind = classifyPath(getCurrentPath());
 
-      if (status === 'authenticated' && Platform.OS !== 'web') {
-        router.replace('/(tabs)/library');
-        setShowLaunch(true);
+      if (routeKind === 'app' || routeKind === 'onboarding') {
+        if (status === 'unauthenticated') {
+          router.replace('/auth/login');
+        }
+        await SplashScreen.hideAsync();
         return;
       }
 
-      router.replace(status === 'authenticated' ? '/(tabs)/library' : '/auth/login');
+      if (routeKind !== 'entry' && routeKind !== 'auth') {
+        await SplashScreen.hideAsync();
+        return;
+      }
+
+      if (status === 'authenticated') {
+        const done = await isOnboardingDone();
+        const destination = done ? '/(tabs)/library' : '/onboarding';
+
+        if (Platform.OS !== 'web' && done) {
+          router.replace('/(tabs)/library');
+          setShowLaunch(true);
+          return;
+        }
+
+        router.replace(destination);
+        await SplashScreen.hideAsync();
+        return;
+      }
+
+      router.replace('/auth/login');
       await SplashScreen.hideAsync();
     })();
-  }, [restoreSession]);
+  }, [fontsLoaded, navigationState?.key, restoreSession]);
 
   const handleLaunchFinish = useCallback(async () => {
     setShowLaunch(false);
@@ -57,7 +115,19 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <Suspense
+          fallback={
+            <View style={{ flex: 1, backgroundColor: '#F7F2E9' }} />
+          }
+        >
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              freezeOnBlur: true,
+              animation: Platform.OS === 'web' ? 'none' : 'default',
+            }}
+          />
+        </Suspense>
         {showLaunch && authStatus === 'authenticated' ? (
           <AuthLaunchScreen
             sessionReady={authStatus === 'authenticated'}

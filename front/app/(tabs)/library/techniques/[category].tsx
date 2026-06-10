@@ -1,123 +1,74 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackButton } from "@/components/BackButton";
-import { LibraryRoutes } from "@/constants/libraryRoutes";
-import type { TechniqueCategory } from "@/types/technique";
+import { LibraryNavCard } from '@/components/library/LibraryNavCard';
+import { LibraryScreenHeader } from '@/components/library/LibraryScreenHeader';
+import { Colors } from '@/constants/colors';
+import { LibraryRoutes } from '@/constants/libraryRoutes';
+import type { TechniqueCategory } from '@/types/technique';
 
 type SubcategoryItem = {
   value: string;
   label: string;
   translation: string;
-  color: string;
+  accentColor: string;
 };
 
 const SUBCATEGORIES: Record<TechniqueCategory, SubcategoryItem[]> = {
-  "nage-waza": [
+  'nage-waza': [
+    { value: 'te-waza', label: 'Te-waza', translation: 'Arm throws', accentColor: '#BF1A2F' },
+    { value: 'koshi-waza', label: 'Koshi-waza', translation: 'Hip throws', accentColor: '#BF1A2F' },
+    { value: 'ashi-waza', label: 'Ashi-waza', translation: 'Leg sweeps', accentColor: '#BF1A2F' },
     {
-      value: "te-waza",
-      label: "Te-waza",
-      translation: "Arm throws",
-      color: "#BF1A2F",
-    },
-    {
-      value: "koshi-waza",
-      label: "Koshi-waza",
-      translation: "Hip throws",
-      color: "#BF1A2F",
-    },
-    {
-      value: "ashi-waza",
-      label: "Ashi-waza",
-      translation: "Leg sweeps",
-      color: "#BF1A2F",
-    },
-    {
-      value: "ma-sutemi-waza",
-      label: "Ma-sutemi-waza",
-      translation: "Sacrifice throws",
-      color: "#BF1A2F",
+      value: 'ma-sutemi-waza',
+      label: 'Ma-sutemi-waza',
+      translation: 'Sacrifice throws',
+      accentColor: '#BF1A2F',
     },
   ],
-  "katame-waza": [
-    {
-      value: "osaekomi-waza",
-      label: "Osaekomi-waza",
-      translation: "Pins",
-      color: "#2D6A4F",
-    },
-    {
-      value: "shime-waza",
-      label: "Shime-waza",
-      translation: "Chokes",
-      color: "#2D6A4F",
-    },
-    {
-      value: "kansetsu-waza",
-      label: "Kansetsu-waza",
-      translation: "Armlocks",
-      color: "#2D6A4F",
-    },
+  'katame-waza': [
+    { value: 'osaekomi-waza', label: 'Osaekomi-waza', translation: 'Pins', accentColor: '#84714F' },
+    { value: 'shime-waza', label: 'Shime-waza', translation: 'Chokes', accentColor: '#84714F' },
+    { value: 'kansetsu-waza', label: 'Kansetsu-waza', translation: 'Armlocks', accentColor: '#84714F' },
   ],
-  "atemi-waza": [
-    {
-      value: "ude-ate",
-      label: "Ude-ate",
-      translation: "Arm strikes",
-      color: "#2563EB",
-    },
-    {
-      value: "keri-waza",
-      label: "Keri-waza",
-      translation: "Kicks",
-      color: "#2563EB",
-    },
+  'atemi-waza': [
+    { value: 'ude-ate', label: 'Ude-ate', translation: 'Arm strikes', accentColor: '#34344A' },
+    { value: 'keri-waza', label: 'Keri-waza', translation: 'Kicks', accentColor: '#34344A' },
   ],
 };
 
 function formatCategoryLabel(category: string): string {
   return category
-    .split("-")
+    .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join("-");
+    .join('-');
 }
 
 export default function SubcategoriesScreen() {
-  const router = useRouter();
   const { category } = useLocalSearchParams<{ category: string }>();
   const categoryKey = category as TechniqueCategory;
   const subcategories = SUBCATEGORIES[categoryKey] ?? [];
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <BackButton />
-        <Text style={styles.title}>{formatCategoryLabel(category ?? "")}</Text>
-      </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LibraryScreenHeader title={formatCategoryLabel(category ?? '')} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {subcategories.map((sub) => (
-          <Pressable
-            key={sub.value}
-            style={({ pressed }) => [
-              styles.card,
-              { borderLeftColor: sub.color },
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() =>
-              router.push(
-                LibraryRoutes.techniqueSubcategory(category ?? '', sub.value),
-              )
-            }
-          >
-            <Text style={styles.label}>{sub.label}</Text>
-            <Text style={styles.translation}>{sub.translation}</Text>
-          </Pressable>
-        ))}
+        <View style={styles.cards}>
+          {subcategories.map((sub) => (
+            <LibraryNavCard
+              key={sub.value}
+              accentColor={sub.accentColor}
+              title={sub.label}
+              subtitle={sub.translation}
+              href={LibraryRoutes.techniqueSubcategory(category ?? '', sub.value)}
+            />
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -126,53 +77,15 @@ export default function SubcategoriesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F2E9",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 16,
-    gap: 12,
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#34344A",
-    flex: 1,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "flex-start",
-    paddingTop: 24,
-    paddingBottom: 120,
     paddingHorizontal: 20,
-    gap: 40,
+    paddingTop: 8,
+    paddingBottom: 120,
   },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: "#34344A",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-  },
-  cardPressed: {
-    opacity: 0.92,
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#34344A",
-    marginBottom: 4,
-  },
-  translation: {
-    fontSize: 14,
-    color: "#84714F",
+  cards: {
+    gap: 20,
   },
 });

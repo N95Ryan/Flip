@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { Theme } from "@/constants/theme";
+
 type BackButtonProps = {
   onPress?: () => void;
   accessibilityLabel?: string;
@@ -38,7 +40,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     padding: 8,
     elevation: 2,
     shadowColor: "#34344A",
