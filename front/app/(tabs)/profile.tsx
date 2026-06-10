@@ -20,7 +20,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { SerifText } from "@/components/SerifText";
 import { Colors } from "@/constants/colors";
+import { Theme } from "@/constants/theme";
 import { formatAvatarUploadError, uploadAvatar } from "@/lib/api";
 import { normalizeUsernameInput, validateUsername } from "@/lib/username";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -217,7 +219,7 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.headerTitle}>My Profile</Text>
+        <SerifText style={styles.headerTitle}>My Profile</SerifText>
 
         <Pressable
           style={styles.avatarPressable}
@@ -227,37 +229,37 @@ export default function ProfileScreen() {
           <UserAvatar size={90} cacheKey={avatarCacheKey} loading={avatarLoading} />
         </Pressable>
 
-        <Text style={styles.username}>{displayUsername(user)}</Text>
+        <SerifText style={styles.username}>{displayUsername(user)}</SerifText>
         <Text style={styles.email}>{user?.email ?? ""}</Text>
 
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <Text style={styles.statEmoji}>{beltEntry(belt).emoji}</Text>
-            <Text style={styles.statValue}>{beltEntry(belt).label}</Text>
+            <SerifText style={styles.statValue}>{beltEntry(belt).label}</SerifText>
             <Text style={styles.statLabel}>Belt level</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statEmoji}>📅</Text>
-            <Text style={styles.statValue}>
+            <SerifText style={styles.statValue}>
               {user?.created_at ? memberYear(user.created_at) : "—"}
-            </Text>
+            </SerifText>
             <Text style={styles.statLabel}>Member since</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statEmoji}>📖</Text>
-            <Text style={styles.statValue}>{studied}</Text>
+            <SerifText style={styles.statValue}>{studied}</SerifText>
             <Text style={styles.statLabel}>Studied</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statEmoji}>{isPremium ? "⭐" : "🔓"}</Text>
-            <Text
+            <SerifText
               style={[
                 styles.statValue,
                 { color: isPremium ? "#2D6A4F" : "#84714F" },
               ]}
             >
               {isPremium ? "Premium" : "Free"}
-            </Text>
+            </SerifText>
             <Text style={styles.statLabel}>Plan</Text>
           </View>
         </View>
@@ -293,7 +295,7 @@ export default function ProfileScreen() {
             <View style={styles.modalBackdrop}>
               <TouchableWithoutFeedback>
                 <View style={styles.modalCard}>
-                  <Text style={styles.modalTitle}>Edit Profile</Text>
+                  <SerifText style={styles.modalTitle}>Edit Profile</SerifText>
                   <Text style={styles.modalFieldLabel}>Username</Text>
                   <TextInput
                     style={styles.modalInput}
@@ -341,7 +343,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Belt Level</Text>
+            <SerifText style={styles.modalTitle}>Belt Level</SerifText>
             <ScrollView
               style={styles.beltList}
               showsVerticalScrollIndicator={false}
@@ -416,7 +418,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "bold",
     color: "#34344A",
     textAlign: "center",
     marginBottom: 24,
@@ -455,7 +456,6 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 18,
-    fontWeight: "bold",
     color: "#34344A",
     textAlign: "center",
   },
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   statCard: {
     width: "47%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
     alignItems: "center",
     shadowColor: "#000",
@@ -489,7 +489,6 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#34344A",
     marginBottom: 4,
   },
@@ -506,7 +505,7 @@ const styles = StyleSheet.create({
   },
   row: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -535,7 +534,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "700",
     color: "#34344A",
     marginBottom: 16,
     textAlign: "center",
@@ -547,7 +545,7 @@ const styles = StyleSheet.create({
   },
   modalInput: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.input,
     padding: 14,
     fontSize: 16,
     color: "#34344A",
@@ -562,7 +560,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 14,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     marginBottom: 8,
     backgroundColor: Colors.background,
     borderWidth: 1,
@@ -588,7 +586,7 @@ const styles = StyleSheet.create({
   modalCancel: {
     flex: 1,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     alignItems: "center",
     backgroundColor: Colors.background,
   },
@@ -600,7 +598,7 @@ const styles = StyleSheet.create({
   modalConfirm: {
     flex: 1,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.cta,
     alignItems: "center",
     backgroundColor: "#BF1A2F",
   },

@@ -16,13 +16,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { AuthInput } from '@/components/auth/AuthInput';
+import { SerifText } from '@/components/SerifText';
+import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import { isOnboardingDone } from '@/lib/onboarding';
 import { useAuthStore } from '@/store/authStore';
 
 const LOGO = require('@/assets/images/Flip-logo.png');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SOCIAL_ICON_SIZE = 20;
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -91,7 +96,7 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Flip</Text>
+        <SerifText style={styles.title}>Flip</SerifText>
         <Text style={styles.subtitle}>Create your account</Text>
 
         <View style={styles.form}>
@@ -178,9 +183,11 @@ export default function RegisterScreen() {
 
         <View style={styles.socialButtons}>
           <Pressable style={styles.googleButton}>
+            <AntDesign name="google" size={SOCIAL_ICON_SIZE} color={Colors.textPrimary} />
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </Pressable>
           <Pressable style={styles.appleButton}>
+            <Ionicons name="logo-apple" size={18} color={Colors.surface} />
             <Text style={styles.appleButtonText}>Continue with Apple</Text>
           </Pressable>
         </View>
@@ -218,7 +225,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F2E9',
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -233,13 +240,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#34344A',
+    color: Colors.textPrimary,
     marginTop: 16,
   },
   subtitle: {
     fontSize: 14,
-    color: '#84714F',
+    color: Colors.textMuted,
     marginTop: 4,
     marginBottom: 32,
   },
@@ -250,8 +256,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   signUpButton: {
-    backgroundColor: '#BF1A2F',
-    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    borderRadius: Theme.borderRadius.cta,
     padding: 16,
     alignItems: 'center',
     marginTop: 4,
@@ -265,7 +271,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   errorText: {
-    color: '#BF1A2F',
+    color: Colors.primary,
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
@@ -280,10 +286,10 @@ const styles = StyleSheet.create({
   separatorLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#84714F',
+    backgroundColor: Colors.border,
   },
   separatorText: {
-    color: '#84714F',
+    color: Colors.textMuted,
     fontSize: 14,
   },
   socialButtons: {
@@ -291,23 +297,29 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   googleButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#34344A',
-    borderRadius: 12,
+    borderColor: Colors.textPrimary,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
   googleButtonText: {
-    color: '#34344A',
+    color: Colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   appleButton: {
-    backgroundColor: '#34344A',
-    borderRadius: 12,
+    backgroundColor: Colors.textPrimary,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
   appleButtonText: {
     color: '#FFFFFF',
@@ -320,11 +332,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    color: '#34344A',
+    color: Colors.textPrimary,
     fontSize: 14,
   },
   footerLink: {
-    color: '#BF1A2F',
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },

@@ -1,7 +1,9 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackButton } from '@/components/BackButton';
+import { LibraryContentCard } from '@/components/library/LibraryContentCard';
+import { LibraryScreenHeader } from '@/components/library/LibraryScreenHeader';
+import { Colors } from '@/constants/colors';
 
 type MoralValue = {
   title: string;
@@ -46,15 +48,12 @@ const MORAL_VALUES: MoralValue[] = [
   },
 ];
 
-const BORDER_COLOR = '#2D6A4F';
+const ACCENT_COLOR = '#84714F';
 
 export default function MoralCodeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <BackButton />
-        <Text style={styles.headerTitle}>Moral Code</Text>
-      </View>
+      <LibraryScreenHeader title="Moral Code" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -66,13 +65,12 @@ export default function MoralCodeScreen() {
         </Text>
 
         {MORAL_VALUES.map((value) => (
-          <View
+          <LibraryContentCard
             key={value.title}
-            style={[styles.valueCard, { borderLeftColor: BORDER_COLOR }]}
-          >
-            <Text style={styles.valueTitle}>{value.title}</Text>
-            <Text style={styles.valueDescription}>{value.description}</Text>
-          </View>
+            accentColor={ACCENT_COLOR}
+            title={value.title}
+            description={value.description}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -82,21 +80,7 @@ export default function MoralCodeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F2E9',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 12,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#34344A',
-    flex: 1,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -104,26 +88,8 @@ const styles = StyleSheet.create({
   },
   intro: {
     fontSize: 14,
-    color: '#84714F',
+    color: Colors.textMuted,
     marginBottom: 16,
-    lineHeight: 22,
-  },
-  valueCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-  },
-  valueTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#34344A',
-  },
-  valueDescription: {
-    fontSize: 14,
-    color: '#84714F',
-    marginTop: 6,
     lineHeight: 22,
   },
 });

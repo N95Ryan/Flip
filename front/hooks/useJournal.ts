@@ -13,8 +13,10 @@ export function useJournal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
+  const fetchEntries = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const data = await apiFetchAuth<JournalListResponse>('/journal');
