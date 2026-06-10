@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 
 import { IntensityStars } from '@/components/journal/IntensityStars';
+import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import type { JournalEntry, JournalEntryPayload } from '@/types/journal';
 
 type JournalFormModalProps = {
@@ -115,7 +117,7 @@ export function JournalFormModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>{isEdit ? 'Edit session' : 'New session'}</Text>
+          <SerifText style={styles.title}>{isEdit ? 'Edit session' : 'New session'}</SerifText>
 
           <Text style={styles.label}>Date</Text>
           <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
@@ -211,7 +213,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: 8,
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.input,
     padding: 14,
   },
   dateText: {
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.input,
     padding: 14,
     fontSize: 16,
     color: Colors.textPrimary,
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     alignItems: 'center',
     backgroundColor: Colors.background,
   },
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.cta,
     alignItems: 'center',
     backgroundColor: Colors.primary,
   },

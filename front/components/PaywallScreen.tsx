@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import { createCheckout } from '@/lib/api';
 
 type PlanKey = 'monthly' | 'yearly' | 'lifetime';
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     borderWidth: 2,
     borderColor: Colors.border,
     paddingVertical: 16,
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
   continueButton: {
     backgroundColor: Colors.primary,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: Theme.borderRadius.cta,
     alignItems: 'center',
   },
   continueButtonDisabled: {

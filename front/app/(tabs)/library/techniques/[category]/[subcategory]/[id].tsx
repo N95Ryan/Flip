@@ -10,7 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/components/BackButton';
+import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import { useTechnique } from '@/hooks/useTechnique';
 import { trackTechniqueView } from '@/lib/api';
 import { getToken } from '@/lib/auth';
@@ -81,7 +83,7 @@ export default function TechniqueDetailScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.name}>{technique.name}</Text>
+          <SerifText style={styles.name}>{technique.name}</SerifText>
 
           <View
             style={[
@@ -134,7 +136,6 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 28,
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 12,
   },
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     marginBottom: 12,
   },
   badgeText: {
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
   },
   tag: {
     backgroundColor: Colors.background,
-    borderRadius: 16,
+    borderRadius: Theme.borderRadius.card,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,

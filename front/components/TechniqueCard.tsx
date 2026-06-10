@@ -1,6 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import type { Technique, TechniqueDifficulty } from '@/types/technique';
 
 interface TechniqueCardProps {
@@ -31,7 +33,7 @@ export function TechniqueCard({ technique }: TechniqueCardProps) {
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleBlock}>
-          <Text style={styles.name}>{technique.name}</Text>
+          <SerifText style={styles.name}>{technique.name}</SerifText>
           <Text style={styles.subcategory}>{formatSubcategory(technique.subcategory)}</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: badgeColor }]}>
@@ -55,7 +57,7 @@ export function TechniqueCard({ technique }: TechniqueCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     borderWidth: 1,
     borderColor: Colors.border,
     padding: 16,
@@ -77,7 +79,6 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 4,
   },
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
   },
   badgeText: {
     fontSize: 11,
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   },
   tag: {
     backgroundColor: Colors.background,
-    borderRadius: 8,
+    borderRadius: Theme.borderRadius.card,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,

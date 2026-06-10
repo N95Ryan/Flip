@@ -1,12 +1,37 @@
 import { AntDesign } from "@expo/vector-icons";
 import { BottomTabBar } from "@react-navigation/bottom-tabs";
+import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { PlatformPressable } from "@react-navigation/elements";
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Theme } from "@/constants/theme";
+
 const ICON_SIZE = 22;
-const ACTIVE_COLOR = "#FFFFFF";
-const INACTIVE_COLOR = "rgba(255,255,255,0.4)";
+const ICON_COLOR = Theme.navbar.iconColor;
+
+function TabBarButton({ children, style, ...props }: BottomTabBarButtonProps) {
+  const focused = props.accessibilityState?.selected ?? false;
+
+  return (
+    <PlatformPressable
+      {...props}
+      pressOpacity={0.7}
+      style={[style, focused && styles.tabActive]}
+    >
+      {children}
+    </PlatformPressable>
+  );
+}
+
+function renderTabBar(props: React.ComponentProps<typeof BottomTabBar>) {
+  return <CustomTabBar {...props} />;
+}
+
+function renderTabBarButton(props: BottomTabBarButtonProps) {
+  return <TabBarButton {...props} />;
+}
 
 function CustomTabBar(props: React.ComponentProps<typeof BottomTabBar>) {
   const insets = useSafeAreaInsets();
@@ -28,11 +53,14 @@ function CustomTabBar(props: React.ComponentProps<typeof BottomTabBar>) {
 export default function TabsLayout() {
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={renderTabBar}
       screenOptions={{
         headerShown: false,
+        lazy: false,
+        freezeOnBlur: true,
+        animation: Platform.OS === "web" ? "none" : "shift",
         tabBarStyle: {
-          backgroundColor: "#34344A",
+          backgroundColor: Theme.navbar.backgroundColor,
           borderRadius: 40,
           height: 64,
           borderTopWidth: 0,
@@ -42,12 +70,14 @@ export default function TabsLayout() {
           shadowOpacity: 0.15,
           shadowRadius: 16,
         },
-        tabBarActiveTintColor: ACTIVE_COLOR,
-        tabBarInactiveTintColor: INACTIVE_COLOR,
+        tabBarActiveTintColor: ICON_COLOR,
+        tabBarInactiveTintColor: ICON_COLOR,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: Theme.navbar.labelFontSize,
           fontWeight: "300",
+          letterSpacing: Theme.navbar.labelLetterSpacing,
         },
+        tabBarButton: renderTabBarButton,
       }}
     >
       <Tabs.Screen
@@ -58,7 +88,8 @@ export default function TabsLayout() {
             <AntDesign
               name="book"
               size={ICON_SIZE}
-              color={focused ? ACTIVE_COLOR : INACTIVE_COLOR}
+              color={ICON_COLOR}
+              style={{ opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity }}
             />
           ),
         }}
@@ -71,7 +102,8 @@ export default function TabsLayout() {
             <AntDesign
               name="edit"
               size={ICON_SIZE}
-              color={focused ? ACTIVE_COLOR : INACTIVE_COLOR}
+              color={ICON_COLOR}
+              style={{ opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity }}
             />
           ),
         }}
@@ -84,7 +116,8 @@ export default function TabsLayout() {
             <AntDesign
               name="user"
               size={ICON_SIZE}
-              color={focused ? ACTIVE_COLOR : INACTIVE_COLOR}
+              color={ICON_COLOR}
+              style={{ opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity }}
             />
           ),
         }}
@@ -92,3 +125,12 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabActive: {
+    backgroundColor: Theme.navbar.activeBackground,
+    borderRadius: Theme.navbar.activeBorderRadius,
+    paddingHorizontal: Theme.navbar.activePaddingHorizontal,
+    paddingVertical: Theme.navbar.activePaddingVertical,
+  },
+});

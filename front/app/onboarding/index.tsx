@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import { setOnboardingDone } from '@/lib/onboarding';
 
 const LOGO = require('@/assets/images/Flip-logo.png');
@@ -88,7 +90,7 @@ export default function OnboardingScreen() {
             ) : (
               <Text style={styles.emoji}>{item.emoji}</Text>
             )}
-            <Text style={styles.title}>{item.title}</Text>
+            <SerifText style={styles.title}>{item.title}</SerifText>
             <Text style={styles.subtitle}>{item.subtitle}</Text>
           </View>
         )}
@@ -140,7 +142,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
   },
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.primary,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.cta,
     alignItems: 'center',
   },
   buttonText: {

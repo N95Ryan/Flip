@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { PaywallScreen } from '@/components/PaywallScreen';
+import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
 
@@ -54,7 +55,7 @@ export function PremiumGate() {
       showsVerticalScrollIndicator={false}
     >
       <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.title}>Unlock your training journal</Text>
+      <SerifText style={styles.title}>Unlock your training journal</SerifText>
       <Text style={styles.subtitle}>
         Track sessions, measure progress, and build a complete training history.
       </Text>
@@ -104,7 +105,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
   },
