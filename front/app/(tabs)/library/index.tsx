@@ -1,17 +1,19 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DailyTipCard } from '@/components/DailyTipCard';
+import { SerifText } from '@/components/SerifText';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Colors } from '@/constants/colors';
 import { LibraryRoutes } from '@/constants/libraryRoutes';
+import { Theme } from '@/constants/theme';
 import { displayUsername, useAuthStore } from '@/store/authStore';
 
 type LibraryCard = {
-  emoji: string;
-  borderColor: string;
+  accentColor: string;
+  kanji: string;
   title: string;
   subtitle: string;
   description: string;
@@ -23,24 +25,24 @@ type LibraryCard = {
 
 const LIBRARY_CARDS: LibraryCard[] = [
   {
-    emoji: '📋',
-    borderColor: '#BF1A2F',
+    accentColor: '#BF1A2F',
+    kanji: '則',
     title: 'Rules',
     subtitle: 'How judo works',
     description: 'Ukemi · Scoring · Combats',
     route: LibraryRoutes.rules,
   },
   {
-    emoji: '🎌',
-    borderColor: '#2D6A4F',
+    accentColor: '#84714F',
+    kanji: '道',
     title: 'Moral Code',
     subtitle: 'The values of judo',
     description: '7 core principles of the judoka',
     route: LibraryRoutes.moralCode,
   },
   {
-    emoji: '🥋',
-    borderColor: '#2563EB',
+    accentColor: '#34344A',
+    kanji: '技',
     title: 'Techniques',
     subtitle: 'Judo techniques library',
     description: 'Throws · Ground work · Strikes',
@@ -49,7 +51,6 @@ const LIBRARY_CARDS: LibraryCard[] = [
 ];
 
 export default function LibraryScreen() {
-  const router = useRouter();
   const { user, refreshUser } = useAuthStore();
 
   useFocusEffect(
@@ -70,9 +71,9 @@ export default function LibraryScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             <Text style={styles.welcomeBack}>Welcome back,</Text>
-            <Text style={styles.welcomeName}>
+            <SerifText style={styles.welcomeName}>
               {displayUsername(user)} 👋
-            </Text>
+            </SerifText>
             <Text style={styles.date}>{today}</Text>
           </View>
           <UserAvatar size={44} />
@@ -88,20 +89,21 @@ export default function LibraryScreen() {
         <Text style={styles.sectionLabel}>What do you want to study?</Text>
 
         {LIBRARY_CARDS.map((card) => (
-          <Pressable
-            key={card.route}
-            style={({ pressed }) => [
-              styles.card,
-              { borderLeftColor: card.borderColor },
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() => router.push(card.route)}
-          >
-            <Text style={styles.emoji}>{card.emoji}</Text>
-            <Text style={styles.cardTitle}>{card.title}</Text>
-            <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-            <Text style={styles.cardDescription}>{card.description}</Text>
-          </Pressable>
+          <Link key={card.route} href={card.route} asChild>
+            <Pressable style={({ pressed }) => pressed && styles.cardPressed}>
+              <View style={styles.card}>
+                <SerifText style={styles.kanji} pointerEvents="none">
+                  {card.kanji}
+                </SerifText>
+                <View style={styles.titleRow}>
+                  <View style={[styles.accentBar, { backgroundColor: card.accentColor }]} />
+                  <SerifText style={styles.cardTitle}>{card.title}</SerifText>
+                </View>
+                <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
+                <Text style={styles.cardDescription}>{card.description}</Text>
+              </View>
+            </Pressable>
+          </Link>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -133,7 +135,6 @@ const styles = StyleSheet.create({
   },
   welcomeName: {
     fontSize: 26,
-    fontWeight: 'bold',
     color: '#34344A',
     marginTop: 2,
   },
@@ -161,10 +162,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
+    width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
-    borderLeftWidth: 4,
     elevation: 2,
     shadowColor: Colors.textPrimary,
     shadowOpacity: 0.06,
@@ -174,15 +177,27 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity: 0.92,
   },
-  emoji: {
-    fontSize: 28,
-    marginBottom: 6,
+  kanji: {
+    position: 'absolute',
+    right: 12,
+    top: 8,
+    fontSize: Theme.kanji.fontSize,
+    color: Theme.kanji.color,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 2,
+  },
+  accentBar: {
+    width: Theme.accentBar.width,
+    height: Theme.accentBar.height,
+    borderRadius: Theme.accentBar.borderRadius,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '700',
     color: Colors.textPrimary,
-    marginBottom: 2,
   },
   cardSubtitle: {
     fontSize: 14,

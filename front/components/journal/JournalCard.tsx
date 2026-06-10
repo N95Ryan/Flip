@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IntensityStars } from '@/components/journal/IntensityStars';
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import type { JournalEntry } from '@/types/journal';
 
 type JournalCardProps = {
@@ -45,7 +46,7 @@ export function JournalCard({ entry, onPress }: JournalCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
     borderLeftWidth: 4,
     borderLeftColor: Colors.primary,

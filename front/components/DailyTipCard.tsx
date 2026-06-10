@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { getDailyTip } from '@/constants/judoTips';
 import { Colors } from '@/constants/colors';
+import { getDailyTip } from '@/constants/judoTips';
+import { Theme } from '@/constants/theme';
 
 export function DailyTipCard() {
   const tip = getDailyTip();
@@ -19,7 +20,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderLeftWidth: 4,
     borderLeftColor: '#84714F',
-    borderRadius: 12,
+    borderRadius: Theme.borderRadius.card,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginTop: 12,

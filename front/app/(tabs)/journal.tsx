@@ -16,7 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { JournalCard } from '@/components/journal/JournalCard';
 import { JournalFormModal } from '@/components/journal/JournalFormModal';
 import { PremiumGate } from '@/components/PremiumGate';
+import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
 import { useJournal } from '@/hooks/useJournal';
 import { useAuthStore } from '@/store/authStore';
 import type { JournalEntry } from '@/types/journal';
@@ -36,9 +38,9 @@ export default function JournalScreen() {
     useCallback(() => {
       refreshUser().catch(() => {});
       if (user?.subscription_status === 'active') {
-        fetchEntries().catch(() => {});
+        fetchEntries({ silent: entries.length > 0 }).catch(() => {});
       }
-    }, [refreshUser, fetchEntries, user?.subscription_status]),
+    }, [refreshUser, fetchEntries, user?.subscription_status, entries.length]),
   );
 
   const openCreate = () => {
@@ -84,7 +86,7 @@ export default function JournalScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Training journal</Text>
+        <SerifText style={styles.title}>Training journal</SerifText>
         <Text style={styles.subtitle}>Log your sessions and track progress</Text>
       </View>
 
@@ -157,7 +159,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   subtitle: {
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: 88,
-    borderRadius: 16,
+    borderRadius: Theme.borderRadius.card,
     marginLeft: 8,
     gap: 4,
   },

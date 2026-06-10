@@ -7,6 +7,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { Colors } from '@/constants/colors';
+import { Theme } from '@/constants/theme';
+
 type AuthInputProps = TextInputProps & {
   containerStyle?: ViewStyle;
 };
@@ -39,7 +42,7 @@ export function AuthInput({
   return (
     <View style={[styles.container, containerStyle]}>
       <TextInput
-        placeholderTextColor="#84714F"
+        placeholderTextColor={Colors.textMuted}
         {...webIgnoreAutofillProps}
         {...props}
         onChangeText={onChangeText}
@@ -62,13 +65,13 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#84714F',
-    borderRadius: 12,
+    borderColor: Colors.textMuted,
+    borderRadius: Theme.borderRadius.input,
     paddingHorizontal: 14,
     paddingVertical: 14,
-    color: '#34344A',
+    color: Colors.textPrimary,
     fontSize: 16,
     ...Platform.select({
       web: {

@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackButton } from '@/components/BackButton';
+import { LibraryScreenHeader } from '@/components/library/LibraryScreenHeader';
 import { TechniqueCard } from '@/components/TechniqueCard';
 import { Colors } from '@/constants/colors';
 import { LibraryRoutes } from '@/constants/libraryRoutes';
@@ -24,7 +24,6 @@ function formatLabel(value: string): string {
 }
 
 export default function SubcategoryTechniquesScreen() {
-  const router = useRouter();
   const { category, subcategory } = useLocalSearchParams<{
     category: string;
     subcategory: string;
@@ -35,10 +34,7 @@ export default function SubcategoryTechniquesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <BackButton />
-        <Text style={styles.title}>{formatLabel(subcategory ?? '')}</Text>
-      </View>
+      <LibraryScreenHeader title={formatLabel(subcategory ?? '')} />
 
       {loading && (
         <View style={styles.centered}>
@@ -57,20 +53,18 @@ export default function SubcategoryTechniquesScreen() {
           data={techniques}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() =>
-                router.push(
-                  LibraryRoutes.techniqueDetail(
-                    category ?? '',
-                    subcategory ?? '',
-                    item.id,
-                  ),
-                )
-              }
-              style={({ pressed }) => pressed && styles.cardPressed}
+            <Link
+              href={LibraryRoutes.techniqueDetail(
+                category ?? '',
+                subcategory ?? '',
+                item.id,
+              )}
+              asChild
             >
-              <TechniqueCard technique={item} />
-            </Pressable>
+              <Pressable style={({ pressed }) => pressed && styles.cardPressed}>
+                <TechniqueCard technique={item} />
+              </Pressable>
+            </Link>
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -89,21 +83,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 16,
-    gap: 12,
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    flex: 1,
   },
   list: {
     paddingHorizontal: 20,

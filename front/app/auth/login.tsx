@@ -20,6 +20,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthInput } from "@/components/auth/AuthInput";
+import { SerifText } from "@/components/SerifText";
+import { Colors } from "@/constants/colors";
+import { Theme } from "@/constants/theme";
 import { useAuthStore } from "@/store/authStore";
 
 const LOGO = require("@/assets/images/Flip-logo.png");
@@ -89,7 +92,7 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Flip</Text>
+        <SerifText style={styles.title}>Flip</SerifText>
         <Text style={styles.subtitle}>Your judo companion</Text>
 
         <View style={styles.form}>
@@ -214,7 +217,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F7F2E9" },
+  safeArea: { flex: 1, backgroundColor: Colors.background },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
@@ -223,13 +226,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logo: { width: 80, height: 80, marginTop: 24 },
-  title: { fontSize: 32, fontWeight: "bold", color: "#34344A", marginTop: 16 },
-  subtitle: { fontSize: 14, color: "#84714F", marginTop: 4, marginBottom: 32 },
+  title: { fontSize: 32, color: Colors.textPrimary, marginTop: 16 },
+  subtitle: { fontSize: 14, color: Colors.textMuted, marginTop: 4, marginBottom: 32 },
   form: { width: "100%" },
   inputSpacing: { marginBottom: 12 },
   signInButton: {
-    backgroundColor: "#BF1A2F",
-    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    borderRadius: Theme.borderRadius.cta,
     padding: 16,
     alignItems: "center",
     marginTop: 4,
@@ -237,7 +240,7 @@ const styles = StyleSheet.create({
   signInButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   signInButtonDisabled: { opacity: 0.6 },
   errorText: {
-    color: "#BF1A2F",
+    color: Colors.primary,
     fontSize: 14,
     marginTop: 8,
     textAlign: "center",
@@ -249,24 +252,24 @@ const styles = StyleSheet.create({
     marginVertical: 28,
     gap: 12,
   },
-  separatorLine: { flex: 1, height: 1, backgroundColor: "#84714F" },
-  separatorText: { color: "#84714F", fontSize: 14 },
+  separatorLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  separatorText: { color: Colors.textMuted, fontSize: 14 },
   socialButtons: { width: "100%", gap: 12 },
   googleButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: "#34344A",
-    borderRadius: 12,
+    borderColor: Colors.textPrimary,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
   },
-  googleButtonText: { color: "#34344A", fontSize: 16, fontWeight: "600" },
+  googleButtonText: { color: Colors.textPrimary, fontSize: 16, fontWeight: "600" },
   appleButton: {
-    backgroundColor: "#34344A",
-    borderRadius: 12,
+    backgroundColor: Colors.textPrimary,
+    borderRadius: Theme.borderRadius.card,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -275,6 +278,6 @@ const styles = StyleSheet.create({
   },
   appleButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
   footer: { flexDirection: "row", marginTop: 32, alignItems: "center" },
-  footerText: { color: "#34344A", fontSize: 14 },
-  footerLink: { color: "#BF1A2F", fontSize: 14, fontWeight: "600" },
+  footerText: { color: Colors.textPrimary, fontSize: 14 },
+  footerLink: { color: Colors.primary, fontSize: 14, fontWeight: "600" },
 });
