@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,17 +30,11 @@ export function PremiumGate() {
     try {
       await refreshUser();
       const status = useAuthStore.getState().user?.subscription_status;
-      if (status === 'active') {
-        Alert.alert('Premium', 'Your subscription is active!');
-      } else {
-        Alert.alert(
-          'Premium',
-          'No active subscription found. Complete checkout or try again in a moment.',
-        );
+      if (status !== 'active') {
+        Alert.alert('Premium', 'No active subscription found.');
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not refresh status';
-      Alert.alert('Premium', message);
+    } catch {
+      Alert.alert('Premium', 'Something went wrong. Please try again.');
     } finally {
       setRestoreLoading(false);
     }
@@ -68,19 +60,10 @@ export function PremiumGate() {
         ))}
       </View>
 
-      <PaywallScreen />
-
-      <Pressable
-        style={styles.secondaryButton}
-        onPress={handleRestore}
-        disabled={restoreLoading}
-      >
-        {restoreLoading ? (
-          <ActivityIndicator color={Colors.accent} />
-        ) : (
-          <Text style={styles.secondaryButtonText}>Restore purchase</Text>
-        )}
-      </Pressable>
+      <PaywallScreen
+        onRestorePurchase={handleRestore}
+        restoreLoading={restoreLoading}
+      />
     </ScrollView>
   );
 }
@@ -95,7 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 120,
     gap: 12,
   },
   logo: {
@@ -125,15 +108,5 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     lineHeight: 22,
     textAlign: 'center',
-  },
-  secondaryButton: {
-    alignSelf: 'stretch',
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.accent,
   },
 });
