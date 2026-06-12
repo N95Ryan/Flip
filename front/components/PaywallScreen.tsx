@@ -55,7 +55,15 @@ async function openCheckoutUrl(url: string) {
   await Linking.openURL(url);
 }
 
-export function PaywallScreen() {
+type PaywallScreenProps = {
+  onRestorePurchase?: () => void;
+  restoreLoading?: boolean;
+};
+
+export function PaywallScreen({
+  onRestorePurchase,
+  restoreLoading = false,
+}: PaywallScreenProps) {
   const [selectedPlan, setSelectedPlan] = useState<PlanKey | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -114,6 +122,19 @@ export function PaywallScreen() {
           <Text style={styles.continueButtonText}>Continue</Text>
         )}
       </Pressable>
+
+      {onRestorePurchase ? (
+        <Pressable
+          style={styles.restoreButton}
+          onPress={onRestorePurchase}
+          disabled={restoreLoading}
+          hitSlop={12}
+        >
+          <Text style={[styles.restoreButtonText, restoreLoading && styles.restoreButtonDisabled]}>
+            {restoreLoading ? 'Checking...' : 'Restore Purchase'}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -195,5 +216,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.surface,
+  },
+  restoreButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  restoreButtonText: {
+    fontSize: 13,
+    color: Colors.accent,
+    textDecorationLine: 'underline',
+  },
+  restoreButtonDisabled: {
+    opacity: 0.5,
   },
 });
