@@ -105,6 +105,45 @@ func TestHandleWebhook_SubscriptionCreated(t *testing.T) {
 	}
 }
 
+func TestHandleWebhook_CheckoutSessionCompleted(t *testing.T) {
+	secret := "whsec_test_secret"
+	repo := &mockUserRepo{}
+	billingSvc := service.NewBillingService(repo, secret)
+	h := NewBillingHandler(billingSvc, nil, nil)
+
+	payload := []byte(`{
+		"type": "checkout.session.completed",
+		"data": {
+			"object": {
+				"id": "cs_test123",
+				"mode": "payment",
+				"payment_status": "paid",
+				"customer": "cus_test123"
+			}
+		}
+	}`)
+	signedPayload := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{
+		Payload: payload,
+		Secret:  secret,
+	})
+
+	req := httptest.NewRequest("POST", "/billing/webhook", strings.NewReader(string(signedPayload.Payload)))
+	req.Header.Set("Stripe-Signature", signedPayload.Header)
+
+	w := httptest.NewRecorder()
+	h.HandleWebhook(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d, got %d", http.StatusOK, w.Code)
+	}
+	if repo.updatedStatus != "active" {
+		t.Errorf("expected status 'active', got '%s'", repo.updatedStatus)
+	}
+	if repo.updatedCustomerID != "cus_test123" {
+		t.Errorf("expected customerID 'cus_test123', got '%s'", repo.updatedCustomerID)
+	}
+}
+
 func TestHandleWebhook_SubscriptionDeleted(t *testing.T) {
 	secret := "whsec_test_secret"
 	repo := &mockUserRepo{}

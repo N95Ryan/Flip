@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	checkoutSuccessURL = "https://flip-back-m624.onrender.com/success"
-	checkoutCancelURL  = "https://flip-back-m624.onrender.com/cancel"
+	checkoutSuccessURL = "flip://success"
+	checkoutCancelURL  = "flip://cancel"
 )
 
 // BillingHandler exposes HTTP endpoints for Stripe billing.
