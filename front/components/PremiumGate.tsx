@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import {
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -11,7 +9,7 @@ import {
 import { PaywallScreen } from '@/components/PaywallScreen';
 import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
-import { useAuthStore } from '@/store/authStore';
+import { useRestorePurchase } from '@/hooks/useRestorePurchase';
 
 const LOGO = require('@/assets/images/Flip-logo.png');
 
@@ -22,23 +20,7 @@ const FEATURES = [
 ];
 
 export function PremiumGate() {
-  const refreshUser = useAuthStore((s) => s.refreshUser);
-  const [restoreLoading, setRestoreLoading] = useState(false);
-
-  const handleRestore = async () => {
-    setRestoreLoading(true);
-    try {
-      await refreshUser();
-      const status = useAuthStore.getState().user?.subscription_status;
-      if (status !== 'active') {
-        Alert.alert('Premium', 'No active subscription found.');
-      }
-    } catch {
-      Alert.alert('Premium', 'Something went wrong. Please try again.');
-    } finally {
-      setRestoreLoading(false);
-    }
-  };
+  const { restorePurchase, loading: restoreLoading } = useRestorePurchase();
 
   return (
     <ScrollView
@@ -61,7 +43,7 @@ export function PremiumGate() {
       </View>
 
       <PaywallScreen
-        onRestorePurchase={handleRestore}
+        onRestorePurchase={restorePurchase}
         restoreLoading={restoreLoading}
       />
     </ScrollView>

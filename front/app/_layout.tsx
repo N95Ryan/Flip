@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 
 import { useFonts } from 'expo-font';
+import * as Linking from 'expo-linking';
 import { Stack, router, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -19,19 +20,19 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 let sessionBootstrapped = false;
 
-type RouteKind = 'entry' | 'auth' | 'app' | 'onboarding' | 'other';
+type RouteKind = 'entry' | 'auth' | 'app' | 'onboarding' | 'billing' | 'other';
 
-function getCurrentPath(): string {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return window.location.pathname;
-  }
-  return '/';
+function pathFromDeepLink(url: string): string | null {
+  const { path } = Linking.parse(url);
+  if (!path) return null;
+  return path.startsWith('/') ? path : `/${path}`;
 }
 
 function classifyPath(path: string): RouteKind {
   const normalized = path.replace(/\/$/, '') || '/';
 
   if (normalized === '/' || normalized === '/index') return 'entry';
+  if (normalized === '/success' || normalized === '/cancel') return 'billing';
   if (normalized.startsWith('/auth')) return 'auth';
   if (normalized.startsWith('/onboarding')) return 'onboarding';
   if (
@@ -71,7 +72,23 @@ export default function RootLayout() {
     (async () => {
       const status = await restoreSession();
       setAuthStatus(status);
-      const routeKind = classifyPath(getCurrentPath());
+
+      const webPath =
+        Platform.OS === 'web' && typeof window !== 'undefined'
+          ? window.location.pathname
+          : null;
+      const initialUrl = webPath ? null : await Linking.getInitialURL();
+      const bootstrapPath =
+        webPath ?? (initialUrl ? pathFromDeepLink(initialUrl) : null) ?? '/';
+      const routeKind = classifyPath(bootstrapPath);
+
+      if (routeKind === 'billing') {
+        if (status === 'unauthenticated') {
+          router.replace('/auth/login');
+        }
+        await SplashScreen.hideAsync();
+        return;
+      }
 
       if (routeKind === 'app' || routeKind === 'onboarding') {
         if (status === 'unauthenticated') {
