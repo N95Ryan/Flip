@@ -20,6 +20,7 @@ import { SerifText } from '@/components/SerifText';
 import { Colors } from '@/constants/colors';
 import { Theme } from '@/constants/theme';
 import { useJournal } from '@/hooks/useJournal';
+import { useRestorePurchase } from '@/hooks/useRestorePurchase';
 import { useAuthStore } from '@/store/authStore';
 import type { JournalEntry } from '@/types/journal';
 
@@ -33,6 +34,7 @@ export default function JournalScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const { restorePurchase, loading: restoreLoading } = useRestorePurchase();
 
   useFocusEffect(
     useCallback(() => {
@@ -75,22 +77,27 @@ export default function JournalScreen() {
     </RectButton>
   );
 
-  if (!isPremium) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <PremiumGate />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <SerifText style={styles.title}>Training journal</SerifText>
+        <View style={styles.headerTop}>
+          <SerifText style={styles.title}>Training journal</SerifText>
+          <Pressable
+            onPress={restorePurchase}
+            disabled={restoreLoading}
+            hitSlop={8}
+          >
+            <Text style={[styles.restoreLink, restoreLoading && styles.restoreLinkDisabled]}>
+              {restoreLoading ? 'Checking...' : 'Restore purchase'}
+            </Text>
+          </Pressable>
+        </View>
         <Text style={styles.subtitle}>Log your sessions and track progress</Text>
       </View>
 
-      {loading && entries.length === 0 ? (
+      {!isPremium ? (
+        <PremiumGate />
+      ) : loading && entries.length === 0 ? (
         <View style={styles.centered}>
           <ActivityIndicator color={Colors.primary} />
         </View>
@@ -121,27 +128,31 @@ export default function JournalScreen() {
         />
       )}
 
-      <Pressable style={styles.fab} onPress={openCreate}>
-        <Ionicons name="add" size={28} color={Colors.surface} />
-      </Pressable>
+      {isPremium ? (
+        <>
+          <Pressable style={styles.fab} onPress={openCreate}>
+            <Ionicons name="add" size={28} color={Colors.surface} />
+          </Pressable>
 
-      <JournalFormModal
-        visible={modalVisible}
-        entry={editingEntry}
-        onClose={() => setModalVisible(false)}
-        onSubmit={async (payload) => {
-          if (editingEntry) {
-            await updateEntry(editingEntry.id, payload);
-          } else {
-            await createEntry(payload);
-          }
-        }}
-        onDelete={
-          editingEntry
-            ? () => deleteEntry(editingEntry.id)
-            : undefined
-        }
-      />
+          <JournalFormModal
+            visible={modalVisible}
+            entry={editingEntry}
+            onClose={() => setModalVisible(false)}
+            onSubmit={async (payload) => {
+              if (editingEntry) {
+                await updateEntry(editingEntry.id, payload);
+              } else {
+                await createEntry(payload);
+              }
+            }}
+            onDelete={
+              editingEntry
+                ? () => deleteEntry(editingEntry.id)
+                : undefined
+            }
+          />
+        </>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -157,9 +168,25 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   title: {
+    flex: 1,
     fontSize: 24,
     color: Colors.textPrimary,
+  },
+  restoreLink: {
+    fontSize: 13,
+    color: Colors.accent,
+    textDecorationLine: 'underline',
+    marginTop: 6,
+  },
+  restoreLinkDisabled: {
+    opacity: 0.5,
   },
   subtitle: {
     fontSize: 14,
