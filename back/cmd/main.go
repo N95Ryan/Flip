@@ -174,6 +174,11 @@ func main() {
 		AllowedHeaders: []string{"Accept", "Content-Type", "Authorization"},
 	}))
 
+	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	r.Post("/auth/register", authHandler.Register)
 
 	r.Post("/auth/login", authHandler.Login)
