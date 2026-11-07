@@ -30,7 +30,6 @@ Flip/
 └── back/    # Go (Chi): REST API, billing, webhooks
     ├── Dockerfile           # multi-stage build, distroless image
     ├── docker-compose.yml   # local stack: Postgres 17 + migrations + API
-    └── docker/initdb/       # base schema loaded on first DB start
 ```
 
 | Layer     | Tech                                 |
@@ -97,8 +96,8 @@ docker compose up --build
 
 | Service   | Role                                                                           |
 | --------- | ------------------------------------------------------------------------------ |
-| `db`      | PostgreSQL 17, loads the base schema from `back/docker/initdb/` on first start |
-| `migrate` | Applies the SQL migrations, then exits                                         |
+| `db`      | PostgreSQL 17 (empty on first start; no init scripts)                          |
+| `migrate` | Applies migrations `000`–`005` from `back/migrations/`, then exits             |
 | `api`     | Go API on port `8080`, starts only after migrations succeed                    |
 
 Compose overrides `DATABASE_URL` to point at the local `db` container, so the Neon URL in your `.env` is never used. The database is also exposed on `localhost:5433`.
@@ -252,7 +251,7 @@ journal_entries (
 )
 ```
 
-A schema-only export of the production database lives in [`back/docker/initdb/000_base_schema.sql`](back/docker/initdb/000_base_schema.sql). Docker Compose loads it on first start, so migrations can be replayed from an empty database.
+The full schema is built by the SQL migrations in [`back/migrations/`](back/migrations/), starting from an empty database (local Docker or Neon).
 
 ---
 
