@@ -30,18 +30,20 @@ Flip/
 └── back/    # Go (Chi): REST API, billing, webhooks
     ├── Dockerfile           # multi-stage build, distroless image
     ├── docker-compose.yml   # local stack: Postgres 17 + migrations + API
+    └── migrations/          # SQL migrations, build the full schema from an empty database
 ```
 
-| Layer     | Tech                                 |
-| --------- | ------------------------------------ |
-| Mobile    | Expo, React Native, TypeScript       |
-| Backend   | Go, Chi                              |
-| Auth      | JWT (custom Go implementation)       |
-| Database  | Neon PostgreSQL                      |
-| Billing   | Stripe (subscriptions + webhooks)    |
-| Container | Docker, Docker Compose               |
-| Deploy    | Expo EAS (mobile) · Render (backend) |
-| Tests     | Go testing + testify                 |
+| Layer     | Tech                                                         |
+| --------- | ------------------------------------------------------------ |
+| Mobile    | Expo, React Native, TypeScript                               |
+| Backend   | Go, Chi                                                      |
+| Auth      | JWT (custom Go implementation)                               |
+| Database  | Neon PostgreSQL                                              |
+| Billing   | Stripe (subscriptions + webhooks)                            |
+| Container | Docker, Docker Compose                                       |
+| Cloud     | AWS: ECR, ECS Fargate, ALB, RDS, Secrets Manager, CloudWatch |
+| Deploy    | Expo EAS (mobile) · Render (backend) · AWS (on-demand demo)  |
+| Tests     | Go testing + testify                                         |
 
 **Frontend**: React Native + TypeScript, Expo Router v3, Zustand (auth state), StyleSheet.
 
@@ -94,11 +96,11 @@ cp .env.example .env  # fill in JWT_SECRET and Stripe TEST keys
 docker compose up --build
 ```
 
-| Service   | Role                                                                           |
-| --------- | ------------------------------------------------------------------------------ |
-| `db`      | PostgreSQL 17 (empty on first start; no init scripts)                          |
-| `migrate` | Applies migrations `000`–`005` from `back/migrations/`, then exits             |
-| `api`     | Go API on port `8080`, starts only after migrations succeed                    |
+| Service   | Role                                                               |
+| --------- | ------------------------------------------------------------------ |
+| `db`      | PostgreSQL 17 (empty on first start; no init scripts)              |
+| `migrate` | Applies migrations `000`–`005` from `back/migrations/`, then exits |
+| `api`     | Go API on port `8080`, starts only after migrations succeed        |
 
 Compose overrides `DATABASE_URL` to point at the local `db` container, so the Neon URL in your `.env` is never used. The database is also exposed on `localhost:5433`.
 
@@ -131,6 +133,53 @@ bun run web        # Web
 ```
 
 Production deployment on Render: see [`docs/deploy-render.md`](docs/deploy-render.md).
+
+---
+
+## AWS deployment (on-demand demo) ☁️
+
+Production runs on Render. The same backend image also runs on AWS as a **demo environment**: it is provisioned for a session, verified end to end, then fully destroyed. No resource is left running, so the environment has no monthly cost.
+
+```
+Internet
+   │  HTTP :80
+   ▼
+Application Load Balancer          public subnets, 2 Availability Zones
+   │  :8080 · health check GET /health
+   ▼
+ECS Fargate task (flip-back)       public subnet, public IP, no NAT gateway
+   │  :5432 · TLS (sslmode=require)
+   ▼
+RDS PostgreSQL 17                  not publicly accessible, encrypted at rest
+```
+
+| Component       | Role                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| ECR             | Private registry for the `linux/amd64` backend image                                      |
+| VPC             | `10.0.0.0/16`, 2 public and 2 private subnets across 2 AZs, Internet Gateway, no NAT      |
+| ALB             | Public entry point; target group in `ip` mode, health check on `/health`                  |
+| ECS Fargate     | Runs the API container (0.25 vCPU, 512 MB); the service keeps one healthy task registered |
+| RDS             | PostgreSQL 17, single-AZ, smallest instance class                                         |
+| Secrets Manager | `DATABASE_URL`, `JWT_SECRET` and the Stripe key, injected as env vars at task start       |
+| CloudWatch Logs | Container stdout, 1-day retention                                                         |
+
+**Network security**: security groups are chained so that each layer only accepts traffic from the previous one.
+
+| Security group | Inbound rule                     |
+| -------------- | -------------------------------- |
+| ALB            | HTTP 80 from the Internet        |
+| ECS            | TCP 8080 from the ALB group only |
+| RDS            | TCP 5432 from the ECS group only |
+
+**Design choices**
+
+- **No NAT gateway.** Tasks get a public IP to reach ECR, Secrets Manager and CloudWatch, but their security group only accepts traffic from the load balancer, so they are not reachable directly from the Internet. This avoids the most expensive networking component for a demo.
+- **Least privilege.** The task execution role can pull the image, write logs and read one single secret.
+- **No secrets in the image or in Git.** All configuration comes from environment variables; sensitive values live in Secrets Manager.
+- **Self-bootstrapping schema.** The API applies idempotent migrations on startup, so it initializes an empty RDS database without any manual step.
+- **Clean teardown.** Resources are deleted in dependency order (service, load balancer, database, secret, cluster, IAM role, registry, network), then verified, including RDS snapshots.
+
+**Next step**: describe the same infrastructure in Terraform, so the environment can be created and destroyed with `terraform apply` and `terraform destroy`.
 
 ---
 
@@ -251,7 +300,7 @@ journal_entries (
 )
 ```
 
-The full schema is built by the SQL migrations in [`back/migrations/`](back/migrations/), starting from an empty database (local Docker or Neon).
+The full schema is built by the idempotent SQL migrations in [`back/migrations/`](back/migrations/), starting from an empty database (local Docker or AWS RDS). On an existing database, they are a no-op.
 
 ---
 
@@ -270,10 +319,11 @@ The full schema is built by the SQL migrations in [`back/migrations/`](back/migr
 
 ## Deployment 🌐
 
-| Target      | Platform       |
-| ----------- | -------------- |
-| Mobile app  | Expo EAS Build |
-| Backend API | Render         |
+| Target           | Platform                                    |
+| ---------------- | ------------------------------------------- |
+| Mobile app       | Expo EAS Build                              |
+| Backend API      | Render                                      |
+| Backend API demo | AWS ECS Fargate (on demand, then destroyed) |
 
 ---
 
