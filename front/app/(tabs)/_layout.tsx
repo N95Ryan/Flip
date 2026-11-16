@@ -56,7 +56,6 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         lazy: false,
-        freezeOnBlur: true,
         animation: Platform.OS === "web" ? "none" : "shift",
         tabBarStyle: {
           backgroundColor: Theme.navbar.backgroundColor,
