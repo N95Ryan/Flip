@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     ...Platform.select({
       web: {
-        outlineStyle: 'none',
+        outlineWidth: 0,
       },
       default: {},
     }),

@@ -140,7 +140,6 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
-              freezeOnBlur: true,
               animation: Platform.OS === 'web' ? 'none' : 'default',
             }}
           />

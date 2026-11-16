@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     borderRadius: 45,
   },
   avatarOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.4)",
     borderRadius: 45,
     alignItems: "center",

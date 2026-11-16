@@ -63,7 +63,7 @@ export function AuthLaunchScreen({ sessionReady, onFinish }: AuthLaunchScreenPro
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#F7F2E9',
     zIndex: 999,
     elevation: 999,
