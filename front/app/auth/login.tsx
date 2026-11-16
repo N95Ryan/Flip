@@ -1,6 +1,5 @@
 'use client';
 
-import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -26,13 +25,6 @@ import { Theme } from "@/constants/theme";
 import { useAuthStore } from "@/store/authStore";
 
 const LOGO = require("@/assets/images/Flip-logo.png");
-
-/** Fond du bouton Apple → couleur de l'icône Google */
-const GOOGLE_ICON_COLOR = "#34344A";
-/** Fond du bouton Google → couleur de l'icône Apple */
-const APPLE_ICON_COLOR = "#FFFFFF";
-
-const SOCIAL_ICON_SIZE = 20;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -71,6 +63,12 @@ export default function LoginScreen() {
 
   const displayError = localError ?? error;
 
+  const dismissKeyboard = () => {
+    if (Platform.OS !== "web") {
+      Keyboard.dismiss();
+    }
+  };
+
   const signInButtonStyle = [
     styles.signInButton,
     isLoading && styles.signInButtonDisabled,
@@ -81,9 +79,8 @@ export default function LoginScreen() {
   ) : (
     <Text style={styles.signInButtonText}>Sign in</Text>
   );
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={{ flex: 1 }}>
+  const screen = (
+    <View style={{ flex: 1 }}>
         <SafeAreaView style={styles.safeArea}>
           <StatusBar style="dark" />
           <ScrollView
@@ -159,31 +156,6 @@ export default function LoginScreen() {
           {displayError ? <Text style={styles.errorText}>{displayError}</Text> : null}
         </View>
 
-        <View style={styles.separator}>
-          <View style={styles.separatorLine} />
-          <Text style={styles.separatorText}>— or —</Text>
-          <View style={styles.separatorLine} />
-        </View>
-
-        <View style={styles.socialButtons}>
-          <Pressable style={styles.googleButton}>
-            <AntDesign
-              name="google"
-              size={SOCIAL_ICON_SIZE}
-              color={GOOGLE_ICON_COLOR}
-            />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </Pressable>
-          <Pressable style={styles.appleButton}>
-            <Ionicons
-              name="logo-apple"
-              size={18}
-              color="#FFFFFF"
-            />
-            <Text style={styles.appleButtonText}>Continue with Apple</Text>
-          </Pressable>
-        </View>
-
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don&apos;t have an account? </Text>
           {Platform.OS === "web" && isInteractive ? (
@@ -211,7 +183,16 @@ export default function LoginScreen() {
         </View>
           </ScrollView>
         </SafeAreaView>
-      </View>
+    </View>
+  );
+
+  if (Platform.OS === "web") {
+    return screen;
+  }
+
+  return (
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      {screen}
     </TouchableWithoutFeedback>
   );
 }
@@ -245,38 +226,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
-  separator: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    marginVertical: 28,
-    gap: 12,
-  },
-  separatorLine: { flex: 1, height: 1, backgroundColor: Colors.border },
-  separatorText: { color: Colors.textMuted, fontSize: 14 },
-  socialButtons: { width: "100%", gap: 12 },
-  googleButton: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.textPrimary,
-    borderRadius: Theme.borderRadius.card,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  googleButtonText: { color: Colors.textPrimary, fontSize: 16, fontWeight: "600" },
-  appleButton: {
-    backgroundColor: Colors.textPrimary,
-    borderRadius: Theme.borderRadius.card,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  appleButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
   footer: { flexDirection: "row", marginTop: 32, alignItems: "center" },
   footerText: { color: Colors.textPrimary, fontSize: 14 },
   footerLink: { color: Colors.primary, fontSize: 14, fontWeight: "600" },
