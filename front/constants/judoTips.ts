@@ -1,9 +1,9 @@
-export type JudoTip = {
+type JudoTip = {
   quote: string;
   author: string;
 };
 
-export const JUDO_TIPS: JudoTip[] = [
+const JUDO_TIPS: JudoTip[] = [
   { quote: 'Maximum efficiency, minimum effort.', author: 'Jigoro Kano' },
   { quote: 'The flexible wins over the stiff.', author: 'Judo proverb' },
   { quote: 'Fall seven times, stand up eight.', author: 'Japanese proverb' },
