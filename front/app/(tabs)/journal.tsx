@@ -10,7 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { RectButton, Swipeable } from 'react-native-gesture-handler';
+import { RectButton } from 'react-native-gesture-handler';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { JournalCard } from '@/components/journal/JournalCard';
@@ -115,9 +116,12 @@ export default function JournalScreen() {
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           renderItem={({ item }) => (
-            <Swipeable renderRightActions={() => renderRightActions(item)} overshootRight={false}>
+            <ReanimatedSwipeable
+              renderRightActions={() => renderRightActions(item)}
+              overshootRight={false}
+            >
               <JournalCard entry={item} onPress={() => openEdit(item)} />
-            </Swipeable>
+            </ReanimatedSwipeable>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
