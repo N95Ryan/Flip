@@ -23,13 +23,6 @@ export interface TechniqueResponse {
 
 export type CategoryFilterValue = 'all' | TechniqueCategory;
 
-export const CATEGORY_FILTERS: { label: string; value: CategoryFilterValue }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Nage-waza', value: 'nage-waza' },
-  { label: 'Katame-waza', value: 'katame-waza' },
-  { label: 'Atemi-waza', value: 'atemi-waza' },
-];
-
 export type SubcategoryFilterValue =
   | 'all'
   | 'te-waza'
@@ -42,14 +35,3 @@ export type SubcategoryFilterValue =
   | 'kansetsu-waza'
   | 'ude-ate'
   | 'keri-waza';
-
-export const SUBCATEGORY_FILTERS: { label: string; value: SubcategoryFilterValue }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Te-waza', value: 'te-waza' },
-  { label: 'Koshi-waza', value: 'koshi-waza' },
-  { label: 'Ashi-waza', value: 'ashi-waza' },
-  { label: 'Ma-sutemi', value: 'ma-sutemi-waza' },
-  { label: 'Osaekomi', value: 'osaekomi-waza' },
-  { label: 'Shime-waza', value: 'shime-waza' },
-  { label: 'Kansetsu', value: 'kansetsu-waza' },
-];
