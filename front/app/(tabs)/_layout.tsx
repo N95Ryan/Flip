@@ -1,8 +1,9 @@
-import { AntDesign } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBar, type BottomTabBarButtonProps } from "expo-router/js-tabs";
 import { PlatformPressable } from "expo-router/react-navigation";
 import { Tabs } from "expo-router";
-import { Platform, StyleSheet, View } from "react-native";
+import type { ComponentProps } from "react";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Theme } from "@/constants/theme";
@@ -10,15 +11,24 @@ import { Theme } from "@/constants/theme";
 const ICON_SIZE = 22;
 const ICON_COLOR = Theme.navbar.iconColor;
 
-function TabBarButton({ children, style, ...props }: BottomTabBarButtonProps) {
-  const focused = props.accessibilityState?.selected ?? false;
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
+function tabIcon(outline: IoniconName, filled: IoniconName) {
+  return ({ focused }: { focused: boolean }) => (
+    <Ionicons
+      name={focused ? filled : outline}
+      size={ICON_SIZE}
+      color={ICON_COLOR}
+      style={{
+        opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity,
+      }}
+    />
+  );
+}
+
+function TabBarButton({ children, style, ...props }: BottomTabBarButtonProps) {
   return (
-    <PlatformPressable
-      {...props}
-      pressOpacity={0.7}
-      style={[style, focused && styles.tabActive]}
-    >
+    <PlatformPressable {...props} pressOpacity={0.7} style={style}>
       {children}
     </PlatformPressable>
   );
@@ -53,6 +63,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       tabBar={renderTabBar}
+      safeAreaInsets={{ top: 0, bottom: 0, left: 0, right: 0 }}
       screenOptions={{
         headerShown: false,
         lazy: false,
@@ -60,19 +71,26 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Theme.navbar.backgroundColor,
           borderRadius: 40,
-          height: 64,
+          height: Theme.navbar.height,
           borderTopWidth: 0,
-          elevation: 8,
-          shadowColor: "#000000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 16,
+          elevation: Theme.navbar.elevation,
+          shadowColor: Theme.navbar.shadowColor,
+          shadowOffset: Theme.navbar.shadowOffset,
+          shadowOpacity: Theme.navbar.shadowOpacity,
+          shadowRadius: Theme.navbar.shadowRadius,
+        },
+        tabBarItemStyle: {
+          justifyContent: "center",
+          paddingVertical: 6,
+        },
+        tabBarIconStyle: {
+          marginBottom: 3,
         },
         tabBarActiveTintColor: ICON_COLOR,
         tabBarInactiveTintColor: ICON_COLOR,
         tabBarLabelStyle: {
           fontSize: Theme.navbar.labelFontSize,
-          fontWeight: "300",
+          fontWeight: "500",
           letterSpacing: Theme.navbar.labelLetterSpacing,
         },
         tabBarButton: renderTabBarButton,
@@ -82,53 +100,23 @@ export default function TabsLayout() {
         name="library"
         options={{
           title: "Library",
-          tabBarIcon: ({ focused }) => (
-            <AntDesign
-              name="book"
-              size={ICON_SIZE}
-              color={ICON_COLOR}
-              style={{ opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity }}
-            />
-          ),
+          tabBarIcon: tabIcon("book-outline", "book"),
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
           title: "Journal",
-          tabBarIcon: ({ focused }) => (
-            <AntDesign
-              name="edit"
-              size={ICON_SIZE}
-              color={ICON_COLOR}
-              style={{ opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity }}
-            />
-          ),
+          tabBarIcon: tabIcon("journal-outline", "journal"),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ focused }) => (
-            <AntDesign
-              name="user"
-              size={ICON_SIZE}
-              color={ICON_COLOR}
-              style={{ opacity: focused ? Theme.navbar.iconActiveOpacity : Theme.navbar.iconInactiveOpacity }}
-            />
-          ),
+          tabBarIcon: tabIcon("person-outline", "person"),
         }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabActive: {
-    backgroundColor: Theme.navbar.activeBackground,
-    borderRadius: Theme.navbar.activeBorderRadius,
-    paddingHorizontal: Theme.navbar.activePaddingHorizontal,
-    paddingVertical: Theme.navbar.activePaddingVertical,
-  },
-});
